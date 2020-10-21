@@ -4,11 +4,9 @@ import (
 	"io"
 	"net"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/hashicorp/raft"
-	raftboltdb "github.com/hashicorp/raft-boltdb"
 	"github.com/rs/zerolog"
 )
 
@@ -78,14 +76,19 @@ import (
 
 // }
 
-type node struct {
+type Raft struct {
 	config   *resolvedRaftConfig
-	raftNode *raft.Raft
+	RaftNode *raft.Raft
 	fsm      *fsm
 	log      *zerolog.Logger
 }
 
-func NewNode(config *resolvedRaftConfig, log *zerolog.Logger) (*node, error) {
+func NewRaft(rawConfig *RawRaftConfig, log *zerolog.Logger) (*Raft, error) {
+	config, err := resolveRaftConfig(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	fsm := &fsm{
 		stateValue: 0,
 	}
@@ -102,21 +105,27 @@ func NewNode(config *resolvedRaftConfig, log *zerolog.Logger) (*node, error) {
 		return nil, err
 	}
 
-	snapshotStoreLogger := log.With().Str("component", "raft-snapshots").Logger()
-	snapshotStore, err := raft.NewFileSnapshotStore(config.DataDir, 1, snapshotStoreLogger)
-	if err != nil {
-		return nil, err
-	}
+	//snapshotStoreLogger := log.With().Str("component", "raft-snapshots").Logger()
+	//snapshotStore, err := raft.NewFileSnapshotStore(config.DataDir, 1, snapshotStoreLogger)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	logStore, err := raftboltdb.NewBoltStore(filepath.Join(config.DataDir, "raft-log.bolt"))
-	if err != nil {
-		return nil, err
-	}
+	//	logStore, err := raftboltdb.NewBoltStore(filepath.Join(config.DataDir, "raft-log.bolt"))
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(config.DataDir, "raft-stable.bolt"))
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
 
-	stableStore, err := raftboltdb.NewBoltStore(filepath.Join(config.DataDir, "raft-stable.bolt"))
-	if err != nil {
-		return nil, err
-	}
+	logStore := raft.NewInmemStore()
+	stableStore := raft.NewInmemStore()
+	snapshotStore := raft.NewInmemSnapshotStore()
+
 	raftNode, err := raft.NewRaft(raftConfig, fsm, logStore, stableStore,
 		snapshotStore, transport)
 	if err != nil {
@@ -133,9 +142,9 @@ func NewNode(config *resolvedRaftConfig, log *zerolog.Logger) (*node, error) {
 		}
 		raftNode.BootstrapCluster(configuration)
 	}
-	return &node{
+	return &Raft{
 		config:   config,
-		raftNode: raftNode,
+		RaftNode: raftNode,
 		log:      log,
 		fsm:      fsm,
 	}, nil

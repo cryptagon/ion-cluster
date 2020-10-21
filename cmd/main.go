@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 
 	cluster "github.com/pion/ion-cluster/pkg"
@@ -96,20 +97,26 @@ func main() {
 	log.Infof("--- Starting SFU Node ---")
 	s := sfu.NewSFU(conf.SFU)
 
-	c := cluster.WebsocketConfig{
-		Key:  key,
-		Cert: cert,
-		Addr: addr,
+	// Spin up raft node
+	raftLogger := zerolog.New(os.Stdout)
+	raft, err := cluster.NewRaft(&conf.Raft, &raftLogger)
+	if err != nil {
+		log.Errorf("Error initializing raft node: %v", err)
+		return
 	}
 
 	// Spin up websocket
-	wsServer, wsError := cluster.NewWebsocketServer(s, c)
+	wsServer, wsError := cluster.NewWebsocketServer(s, conf.Signal)
 	go wsServer.Run()
 
 	// Select on error channels from different modules
-	select {
-	case err := <-wsError:
-		log.Errorf("Error in wsServer: %v", err)
-		return
+	for {
+		select {
+		case err := <-wsError:
+			log.Errorf("Error in wsServer: %v", err)
+			return
+		case leader := <-raft.RaftNode.LeaderCh():
+			log.Debugf("Leadership Changed, isLeader %v", leader)
+		}
 	}
 }

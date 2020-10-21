@@ -6,7 +6,7 @@ require (
 	github.com/go-kit/kit v0.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-multierror v1.0.0
-	github.com/hashicorp/go-sockaddr v1.0.0
+	github.com/hashicorp/go-sockaddr v1.0.2
 	github.com/hashicorp/raft v1.2.0
 	github.com/hashicorp/raft-boltdb v0.0.0-20191021154308-4207f1bf0617
 	github.com/justinas/alice v1.2.0

@@ -1,11 +1,15 @@
 [raft]
 # enable raft clustering
 enabled = true
-bindaddress = "0.0.0.0"
-raftport = 7000
+bindaddress = "{{ GetPrivateIP }}"
+raftport = 6000
 joinaddress = ""
 bootstrap = true
 
+[signal]
+addr = ":7000"
+key = ""
+cert = ""
 
 [sfu.router]
 # pass bandwidth feeback from subs to pubs
