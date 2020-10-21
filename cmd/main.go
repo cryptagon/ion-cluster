@@ -154,7 +154,6 @@ func main() {
 						break
 					}
 				}
-
 			}
 		case sig := <-sigs:
 			log.Debugf("got signal %v", sig)

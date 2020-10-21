@@ -9,32 +9,61 @@ import (
 	"github.com/hashicorp/raft"
 )
 
-type fsm struct {
-	mutex      sync.Mutex
-	stateValue int
+const (
+	opTypeSessionCreate = "session_create"
+	opTypeSessionRemove = "session_remove"
+	opTypeNodeDown      = "node_down"
+)
+
+type op struct {
+	Type      string
+	SessionID string
+	NodeID    string
 }
 
-type event struct {
-	Type  string
-	Value int
+type fsm struct {
+	mutex sync.Mutex
+
+	// [session-id]nodeid
+	sessions map[string]string
 }
 
 // Apply applies a Raft log entry to the key-value store.
 func (fsm *fsm) Apply(logEntry *raft.Log) interface{} {
-	var e event
-	if err := json.Unmarshal(logEntry.Data, &e); err != nil {
+	var op op
+	if err := json.Unmarshal(logEntry.Data, &op); err != nil {
 		panic("Failed unmarshaling Raft log entry. This is a bug.")
 	}
 
-	switch e.Type {
-	case "set":
+	switch op.Type {
+	case opTypeSessionCreate:
 		fsm.mutex.Lock()
 		defer fsm.mutex.Unlock()
-		fsm.stateValue = e.Value
+
+		fsm.sessions[op.SessionID] = op.NodeID
+
+		return nil
+	case opTypeSessionRemove:
+		fsm.mutex.Lock()
+		defer fsm.mutex.Unlock()
+
+		return nil
+
+	case opTypeNodeDown:
+		fsm.mutex.Lock()
+		defer fsm.mutex.Unlock()
+
+		// Clean up all sessions from a down node
+		// in the future we can migrate sessions / be smarter about this, especially if a node is draining
+		for sessionID, nodeID := range fsm.sessions {
+			if nodeID == op.SessionID {
+				delete(fsm.sessions, sessionID)
+			}
+		}
 
 		return nil
 	default:
-		panic(fmt.Sprintf("Unrecognized event type in Raft log entry: %s. This is a bug.", e.Type))
+		panic(fmt.Sprintf("Unrecognized event type in Raft log entry: %s. This is a bug.", op.Type))
 	}
 }
 
@@ -42,7 +71,7 @@ func (fsm *fsm) Snapshot() (raft.FSMSnapshot, error) {
 	fsm.mutex.Lock()
 	defer fsm.mutex.Unlock()
 
-	return &fsmSnapshot{stateValue: fsm.stateValue}, nil
+	return &fsmSnapshot{sessions: fsm.sessions}, nil
 }
 
 // Restore stores the key-value store to a previous state.
@@ -52,6 +81,6 @@ func (fsm *fsm) Restore(serialized io.ReadCloser) error {
 		return err
 	}
 
-	fsm.stateValue = snapshot.stateValue
+	fsm.sessions = snapshot.sessions
 	return nil
 }

@@ -24,7 +24,7 @@ func NewRaft(rawConfig *RawRaftConfig, log *zerolog.Logger) (*Raft, error) {
 	}
 
 	fsm := &fsm{
-		stateValue: 0,
+		sessions: make(map[string]string),
 	}
 
 	if err := os.MkdirAll(config.DataDir, 0700); err != nil {
@@ -82,10 +82,6 @@ func NewRaft(rawConfig *RawRaftConfig, log *zerolog.Logger) (*Raft, error) {
 		log:      log,
 		fsm:      fsm,
 	}, nil
-}
-
-func (r *Raft) Join(addr string) {
-
 }
 
 func raftTransport(raftAddr net.Addr, log io.Writer) (*raft.NetworkTransport, error) {

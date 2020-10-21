@@ -7,7 +7,7 @@ import (
 )
 
 type fsmSnapshot struct {
-	stateValue int `json:"value"`
+	sessions map[string]string `json:"sessions"`
 }
 
 func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {

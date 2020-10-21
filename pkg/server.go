@@ -15,6 +15,7 @@ import (
 )
 
 type jsonPeer struct {
+	raft Raft
 	sfu.Peer
 }
 
