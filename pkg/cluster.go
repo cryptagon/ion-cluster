@@ -55,6 +55,11 @@ func (n *Node) Run() {
 	log.Debugf("Local member %s:%d\n", node.Addr, node.Port)
 }
 
+// Shutdown memberlist
+func (n *Node) Shutdown() {
+	n.memberlist.Shutdown()
+}
+
 //type delegate struct {
 //	broadcasts *memberlist.TransmitLimitedQueue
 //}

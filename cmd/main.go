@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/raft"
@@ -115,6 +117,10 @@ func main() {
 	wsServer, wsError := cluster.NewWebsocketServer(s, conf.Signal)
 	go wsServer.Run()
 
+	// Listen for signals
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 	// Select on error channels from different modules
 	for {
 		select {
@@ -128,7 +134,6 @@ func main() {
 			log.Debugf("Leadership Changed, isLeader %v", leader)
 		case nodeEvent := <-n.NodeEventCh:
 			log.Debugf("Node Event: %v", nodeEvent)
-
 			if f := r.RaftNode.VerifyLeader(); f.Error() == nil {
 				// we are leader
 				switch nodeEvent.Event {
@@ -151,6 +156,11 @@ func main() {
 				}
 
 			}
+		case sig := <-sigs:
+			log.Debugf("got signal %v", sig)
+			n.Shutdown()
+			r.RaftNode.Shutdown().Error()
+			return
 		}
 	}
 }

@@ -8,12 +8,6 @@ type opCreateSession struct {
 	SessionID string
 }
 
-type opAssignSession struct {
-	Timestamp time.Time
-	SessionID string
-	NodeID    string
-}
-
 type opRemoveSession struct {
 	Timestamp time.Time
 	SessionID string
