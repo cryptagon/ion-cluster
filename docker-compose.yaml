@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+  sfuA:
+    image: pionwebrtc/ion-cluster:latest
+    build:
+      dockerfile: Dockerfile
+      context: .
+    command: ["-c", "/configs/sfu.toml", "-a", ":7000"]
+    volumes:
+      - "./cmd/server/cluster/configs/config-a.toml:/configs/sfu.toml"
+    ports:
+      - "5000-5100:5000-5100/udp"
+      - "7000:7000"
+    networks:
+      - ionnet
+  sfuB:
+    image: pionwebrtc/ion-cluster:latest
+    links:
+      - sfuA
+    build:
+      dockerfile: cmd/server/cluster/Dockerfile
+      context: .
+    command: ["-c", "/configs/sfu.toml", "-a", ":7001"]
+    volumes:
+      - "./cmd/server/cluster/configs/config-b.toml:/configs/sfu.toml"
+    environment:
+      IONSFU_PEERS: "sfuA"
+    ports:
+      - "5200-5300:5200-5300/udp"
+      - "7001:7001"
+    networks:
+      - ionnet
+
+networks:
+  ionnet:
+    external: true
+    name: ionnet
+    driver: bridge
+ 
