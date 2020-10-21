@@ -13,9 +13,18 @@ import (
 
 // RootConfig is the root config read in from config.toml
 type RootConfig struct {
-	Signal WebsocketConfig
-	SFU    sfu.Config
-	Raft   RawRaftConfig
+	Signal  WebsocketConfig
+	SFU     sfu.Config
+	Cluster NodeConfig
+}
+
+// NodeConfig contains configuration about clustering servers
+type NodeConfig struct {
+	Enabled        bool
+	BindAddress    string
+	MemberlistPort int
+	Join           []string
+	Raft           RawRaftConfig
 }
 
 // RawRaftConfig represents raft config read in from the config.toml

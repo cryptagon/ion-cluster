@@ -14,22 +14,6 @@ import (
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 )
 
-// Join message sent when initializing a peer connection
-type Join struct {
-	Sid   string                    `json:"sid"`
-	Offer webrtc.SessionDescription `json:"offer"`
-}
-
-// Negotiation message sent when renegotiating the peer connection
-type Negotiation struct {
-	Desc webrtc.SessionDescription `json:"desc"`
-}
-
-// Trickle message sent when renegotiating the peer connection
-type Trickle struct {
-	Candidate webrtc.ICECandidateInit `json:"candidate"`
-}
-
 type jsonPeer struct {
 	sfu.Peer
 }

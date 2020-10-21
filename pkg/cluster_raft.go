@@ -10,72 +10,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// func main() {
-// 	logger := zerolog.New(os.Stdout)
-
-// 	rawConfig := readRawConfig()
-// 	config, err := resolveConfig(rawConfig)
-// 	if err != nil {
-// 		fmt.Fprintf(os.Stderr, "Configuration errors - %s\n", err)
-// 		os.Exit(1)
-// 	}
-
-// 	nodeLogger := logger.With().Str("component", "node").Logger()
-// 	node, err := NewNode(config, &nodeLogger)
-// 	if err != nil {
-// 		fmt.Fprintf(os.Stderr, "Error configuring node: %s", err)
-// 		os.Exit(1)
-// 	}
-
-// 	if config.JoinAddress != "" {
-// 		go func() {
-// 			retryJoin := func() error {
-// 				url := url.URL{
-// 					Scheme: "http",
-// 					Host:   config.JoinAddress,
-// 					Path:   "join",
-// 				}
-
-// 				req, err := http.NewRequest(http.MethodPost, url.String(), nil)
-// 				if err != nil {
-// 					return err
-// 				}
-// 				req.Header.Add("Peer-Address", config.RaftAddress.String())
-
-// 				resp, err := http.DefaultClient.Do(req)
-// 				if err != nil {
-// 					return err
-// 				}
-
-// 				if resp.StatusCode != http.StatusOK {
-// 					return fmt.Errorf("non 200 status code: %d", resp.StatusCode)
-// 				}
-
-// 				return nil
-// 			}
-
-// 			for {
-// 				if err := retryJoin(); err != nil {
-// 					logger.Error().Err(err).Str("component", "join").Msg("Error joining cluster")
-// 					time.Sleep(1 * time.Second)
-// 				} else {
-// 					break
-// 				}
-// 			}
-// 		}()
-// 	}
-
-// 	httpLogger := logger.With().Str("component", "http").Logger()
-// 	httpServer := &httpServer{
-// 		node:    node,
-// 		address: config.HTTPAddress,
-// 		logger:  &httpLogger,
-// 	}
-
-// 	httpServer.Start()
-
-// }
-
 type Raft struct {
 	config   *resolvedRaftConfig
 	RaftNode *raft.Raft
@@ -148,6 +82,10 @@ func NewRaft(rawConfig *RawRaftConfig, log *zerolog.Logger) (*Raft, error) {
 		log:      log,
 		fsm:      fsm,
 	}, nil
+}
+
+func (r *Raft) Join(addr string) {
+
 }
 
 func raftTransport(raftAddr net.Addr, log io.Writer) (*raft.NetworkTransport, error) {

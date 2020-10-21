@@ -1,16 +1,16 @@
 [cluster]
 enabled = true
 bindaddress = "{{ GetPrivateIP }}"
-memberlistport = 6000
-join = []
+memberlistport = 6001
+join = ["192.168.1.2:6000"]
 
 [cluster.raft]
-raftport = 6100
+raftport = 6101
 bindaddress = "{{ GetPrivateIP }}"
-bootstrap = true 
+bootstrap = false 
 
 [signal]
-addr = ":7000"
+addr = ":7001"
 key = ""
 cert = ""
 
