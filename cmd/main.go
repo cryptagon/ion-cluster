@@ -10,7 +10,6 @@ import (
 
 	"github.com/hashicorp/memberlist"
 	"github.com/hashicorp/raft"
-	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 
 	cluster "github.com/pion/ion-cluster/pkg"
@@ -101,17 +100,7 @@ func main() {
 	log.Infof("--- Starting SFU Node ---")
 	s := sfu.NewSFU(conf.SFU)
 
-	// Spin up raft node
-	raftLogger := zerolog.New(os.Stdout)
-	r, err := cluster.NewRaft(&conf.Cluster.Raft, &raftLogger)
-	if err != nil {
-		log.Errorf("Error initializing raft node: %v", err)
-		return
-	}
-
-	// Start cluster node
-	n, nErr := cluster.NewNode(conf.Cluster)
-	go n.Run()
+	coordinator = cluster.NewCoordinator(conf.Cluster)
 
 	// Spin up websocket
 	sServer, sError := cluster.NewSignal(s, conf.Signal)
@@ -135,31 +124,8 @@ func main() {
 		case err := <-nErr:
 			log.Errorf("Error in cluster.Node{} %v", err)
 			return
-		case leader := <-r.RaftNode.LeaderCh():
-			log.Debugf("Leadership Changed, isLeader %v", leader)
-		case nodeEvent := <-n.NodeEventCh:
-			log.Debugf("Node Event: %v", nodeEvent)
-			if f := r.RaftNode.VerifyLeader(); f.Error() == nil {
-				// we are leader
-				switch nodeEvent.Event {
-				case memberlist.NodeJoin:
-					peerRaftPort := (nodeEvent.Node.Port + 100)
-					peer := fmt.Sprintf("%v:%v", nodeEvent.Node.Addr.String(), peerRaftPort)
-					f := r.RaftNode.AddVoter(raft.ServerID(peer), raft.ServerAddress(peer), 0, 0)
-					if f.Error() != nil {
-						log.Errorf("error adding voter: %s", err)
-						break
-					}
-				case memberlist.NodeLeave:
-					peerRaftPort := (nodeEvent.Node.Port + 100)
-					peer := fmt.Sprintf("%v:%v", nodeEvent.Node.Addr.String(), peerRaftPort)
-					f := r.RaftNode.RemoveServer(raft.ServerID(peer), 0, 0)
-					if f.Error() != nil {
-						log.Errorf("error adding voter: %s", err)
-						break
-					}
-				}
-			}
+		
+		}
 		case sig := <-sigs:
 			log.Debugf("got signal %v", sig)
 			n.Shutdown()

@@ -20,7 +20,20 @@ type nodeInfo struct {
 // Coordinator is responsible for managing sessions
 // and providing rpc connections to other nodes
 type coordinator interface {
+	start() error
+	close() error
+
 	updateNodeInfo(info nodeInfo) error
 	getClientForNode(nodeID string) (*pb.SFUClient, error)
 	createSession(nodeID string, sessionID string) error
+}
+
+func NewCoordinator(conf CoordinatorConfig) {
+	if conf.Mem != nil {
+		return memCoordinator{}
+	}
+
+	if conf.Etcd != nil {
+		return newEtcdCoordinator(conf.Etcd)
+	}
 }

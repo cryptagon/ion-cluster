@@ -19,14 +19,6 @@ import (
 	_ "net/http/pprof"
 )
 
-// SignalConfig params for http listener / grpc / websocket server
-type SignalConfig struct {
-	Key      string
-	Cert     string
-	HTTPAddr string
-	GRPCAddr string
-}
-
 // Signal is the grpc/http/websocket signaling server
 type Signal struct {
 	c       coordinator

@@ -25,6 +25,7 @@ func (m *memCoordinator) getClientForNode(nodeID string) (*pb.SFUClient, error) 
 		return nil, fmt.Errorf("memCoordinator cannot get client for external node")
 	}
 
+	// it would be better if we returned a pb.SFUClient mock here that acted like a local peer
 	conn, err := grpc.Dial(m.info.endpoint, grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
 		return nil, fmt.Errorf("memCoordinator couldn't create loopback grpc connection")
@@ -42,4 +43,5 @@ func (m *memCoordinator) createSession(nodeID string, sessionID string) error {
 		return fmt.Errorf("memCoordinator cannot create session on external node")
 	}
 
+	m.sessions = append(m.sessions, sessionID)
 }

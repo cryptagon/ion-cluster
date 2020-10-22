@@ -1,13 +1,10 @@
-[cluster]
-enabled = true
-bindaddress = "{{ GetPrivateIP }}"
-memberlistport = 6000
-join = ["192.168.1.2:6000", "192.168.1.2:6001","192.168.1.2:6002"]
+# local coordinator used for testing / single node
+#[coordinator.mem]
+#enabled = true
 
-[cluster.raft]
-raftport = 6100
-bindaddress = "{{ GetPrivateIP }}"
-bootstrap = true 
+[coordinator.etcd]
+enabled = true
+host = "localhost:2379"
 
 [signal]
 httpaddr = ":7000"
