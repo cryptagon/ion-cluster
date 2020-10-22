@@ -2,19 +2,15 @@ package cluster
 
 import (
 	"encoding/json"
-	"net"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	pb "github.com/pion/ion-sfu/cmd/signal/grpc/proto"
 
-	grpcServer "github.com/pion/ion-sfu/cmd/signal/grpc/server"
 	sfu "github.com/pion/ion-sfu/pkg"
 	"github.com/pion/ion-sfu/pkg/log"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
-	"google.golang.org/grpc"
 
 	// pprof
 	_ "net/http/pprof"
@@ -73,13 +69,13 @@ func (s *Signal) ServeWebsocket() {
 	r.Handle("/session/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
-		nodeMeta, err := s.c.getNodeForSession(vars["id"])
+		meta, err := s.c.getOrCreateSession(vars["id"])
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		payload, err := json.Marshal(nodeMeta)
+		payload, err := json.Marshal(meta)
 		if err != nil {
 			log.Debugf("error marshaling nodeMeta: %v", err)
 			return
@@ -104,24 +100,24 @@ func (s *Signal) ServeWebsocket() {
 	}
 }
 
-// ServeGRPC serve grpc
-func (s *Signal) ServeGRPC() {
-	l, err := net.Listen("tcp", s.config.GRPCAddr)
-	if err != nil {
-		s.errChan <- err
-		return
-	}
+// // ServeGRPC serve grpc
+// func (s *Signal) ServeGRPC() {
+// 	l, err := net.Listen("tcp", s.config.GRPCAddr)
+// 	if err != nil {
+// 		s.errChan <- err
+// 		return
+// 	}
 
-	gs := grpc.NewServer()
-	inst := grpcServer.GRPCSignal{SFU: s.sfu}
-	pb.RegisterSFUService(gs, &pb.SFUService{
-		Signal: inst.Signal,
-	})
+// 	gs := grpc.NewServer()
+// 	inst := grpcServer.GRPCSignal{SFU: s.sfu}
+// 	pb.RegisterSFUService(gs, &pb.SFUService{
+// 		Signal: inst.Signal,
+// 	})
 
-	log.Infof("GRPC Listening at %s", s.config.GRPCAddr)
-	if err := gs.Serve(l); err != nil {
-		log.Errorf("err=%v", err)
-		s.errChan <- err
-		return
-	}
-}
+// 	log.Infof("GRPC Listening at %s", s.config.GRPCAddr)
+// 	if err := gs.Serve(l); err != nil {
+// 		log.Errorf("err=%v", err)
+// 		s.errChan <- err
+// 		return
+// 	}
+// }

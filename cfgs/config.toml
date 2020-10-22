@@ -1,10 +1,10 @@
 # local coordinator used for testing / single node
-#[coordinator.mem]
-#enabled = true
-
-[coordinator.etcd]
+[coordinator.mem]
 enabled = true
-host = "localhost:2379"
+
+# [coordinator.etcd]
+# enabled = true
+# host = "localhost:2379"
 
 [signal]
 fqdn = "localhost"

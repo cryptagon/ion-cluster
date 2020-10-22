@@ -105,9 +105,9 @@ func main() {
 	if conf.Signal.HTTPAddr != "" {
 		go sServer.ServeWebsocket()
 	}
-	if conf.Signal.GRPCAddr != "" {
-		go sServer.ServeGRPC()
-	}
+	// if conf.Signal.GRPCAddr != "" {
+	// 	go sServer.ServeGRPC()
+	// }
 
 	// Listen for signals
 	sigs := make(chan os.Signal, 1)

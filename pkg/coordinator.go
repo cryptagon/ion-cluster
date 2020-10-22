@@ -2,36 +2,46 @@ package cluster
 
 import (
 	"sync"
+
+	"github.com/pborman/uuid"
 )
 
-type nodeMeta struct {
-	NodeID   string `json:"node_id"`
-	Endpoint string `json:"endpoint"`
-	local    bool
+type sessionMeta struct {
+	SessionID string `json:"session_id"`
+	NodeID    string `json:"node_id"`
+	Endpoint  string `json:"endpoint"`
+	Redirect  bool   `json:"redirect"`
 }
 
 // Coordinator is responsible for managing sessions
 // and providing rpc connections to other nodes
 type coordinator interface {
-	getNodeForSession(sessionID string) (nodeMeta, error)
+	getOrCreateSession(sessionID string) (sessionMeta, error)
 }
 
+// NewCoordinator configures coordinator for this node
 func NewCoordinator(conf RootConfig) coordinator {
 	return &memCoordinator{
+		nodeID:   uuid.New(),
 		endpoint: conf.Endpoint(),
 	}
 }
 
 type memCoordinator struct {
 	mu       sync.Mutex
+	nodeID   string
 	endpoint string
 }
 
-func (m *memCoordinator) getNodeForSession(sessionID string) (nodeMeta, error) {
-	return nodeMeta{
-		NodeID:   "local",
-		Endpoint: m.endpoint,
-		local:    true,
+func (m *memCoordinator) getOrCreateSession(sessionID string) (sessionMeta, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return sessionMeta{
+		SessionID: sessionID,
+		NodeID:    m.nodeID,
+		Endpoint:  m.endpoint,
+		Redirect:  false,
 	}, nil
 }
 
