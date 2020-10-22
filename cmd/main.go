@@ -8,8 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/hashicorp/memberlist"
-	"github.com/hashicorp/raft"
 	"github.com/spf13/viper"
 
 	cluster "github.com/pion/ion-cluster/pkg"
@@ -100,10 +98,10 @@ func main() {
 	log.Infof("--- Starting SFU Node ---")
 	s := sfu.NewSFU(conf.SFU)
 
-	coordinator = cluster.NewCoordinator(conf.Cluster)
+	coordinator := cluster.NewCoordinator(conf)
 
 	// Spin up websocket
-	sServer, sError := cluster.NewSignal(s, conf.Signal)
+	sServer, sError := cluster.NewSignal(s, coordinator, conf.Signal)
 	if conf.Signal.HTTPAddr != "" {
 		go sServer.ServeWebsocket()
 	}
@@ -121,15 +119,9 @@ func main() {
 		case err := <-sError:
 			log.Errorf("Error in wsServer: %v", err)
 			return
-		case err := <-nErr:
-			log.Errorf("Error in cluster.Node{} %v", err)
-			return
-		
-		}
 		case sig := <-sigs:
 			log.Debugf("got signal %v", sig)
-			n.Shutdown()
-			r.RaftNode.Shutdown().Error()
+			//todo wait for all sessions to end
 			return
 		}
 	}

@@ -7,6 +7,7 @@ enabled = true
 host = "localhost:2379"
 
 [signal]
+fqdn = "localhost"
 httpaddr = ":7000"
 grpcaddr = ":50051"
 key = ""

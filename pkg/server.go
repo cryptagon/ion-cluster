@@ -1,14 +1,15 @@
 package cluster
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	pb "github.com/pion/ion-sfu/cmd/signal/grpc/proto"
 
 	grpcServer "github.com/pion/ion-sfu/cmd/signal/grpc/server"
-	jsonrpcServer "github.com/pion/ion-sfu/cmd/signal/json-rpc/server"
 	sfu "github.com/pion/ion-sfu/pkg"
 	"github.com/pion/ion-sfu/pkg/log"
 	"github.com/sourcegraph/jsonrpc2"
@@ -29,10 +30,11 @@ type Signal struct {
 }
 
 // NewSignal creates a signaling server
-func NewSignal(s *sfu.SFU, conf SignalConfig) (*Signal, chan error) {
+func NewSignal(s *sfu.SFU, c coordinator, conf SignalConfig) (*Signal, chan error) {
 	e := make(chan error)
 	w := &Signal{
 		sfu:     s,
+		c:       c,
 		errChan: e,
 		config:  conf,
 	}
@@ -41,6 +43,8 @@ func NewSignal(s *sfu.SFU, conf SignalConfig) (*Signal, chan error) {
 
 // ServeWebsocket listens for incoming websocket signaling requests
 func (s *Signal) ServeWebsocket() {
+	r := mux.NewRouter()
+
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -49,19 +53,42 @@ func (s *Signal) ServeWebsocket() {
 		WriteBufferSize: 1024,
 	}
 
-	http.Handle("/ws", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/ws", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			panic(err)
 		}
 		defer c.Close()
 
-		p := jsonrpcServer.NewJSONSignal(sfu.NewPeer(s.sfu))
+		p := JSONSignal{
+			s.c,
+			sfu.NewPeer(s.sfu),
+		}
 		defer p.Close()
 
-		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), p)
+		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), &p)
 		<-jc.DisconnectNotify()
 	}))
+
+	r.Handle("/session/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		nodeMeta, err := s.c.getNodeForSession(vars["id"])
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		payload, err := json.Marshal(nodeMeta)
+		if err != nil {
+			log.Debugf("error marshaling nodeMeta: %v", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(payload)
+	}))
+
+	http.Handle("/", r)
 
 	var err error
 	if s.config.Key != "" && s.config.Cert != "" {
