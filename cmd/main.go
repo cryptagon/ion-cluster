@@ -114,8 +114,13 @@ func main() {
 	go n.Run()
 
 	// Spin up websocket
-	wsServer, wsError := cluster.NewWebsocketServer(s, conf.Signal)
-	go wsServer.Run()
+	sServer, sError := cluster.NewSignal(s, conf.Signal)
+	if conf.Signal.HTTPAddr != "" {
+		go sServer.ServeWebsocket()
+	}
+	if conf.Signal.GRPCAddr != "" {
+		go sServer.ServeGRPC()
+	}
 
 	// Listen for signals
 	sigs := make(chan os.Signal, 1)
@@ -124,7 +129,7 @@ func main() {
 	// Select on error channels from different modules
 	for {
 		select {
-		case err := <-wsError:
+		case err := <-sError:
 			log.Errorf("Error in wsServer: %v", err)
 			return
 		case err := <-nErr:

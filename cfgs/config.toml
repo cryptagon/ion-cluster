@@ -10,7 +10,8 @@ bindaddress = "{{ GetPrivateIP }}"
 bootstrap = true 
 
 [signal]
-addr = ":7000"
+httpaddr = ":7000"
+grpcaddr = ":7100"
 key = ""
 cert = ""
 

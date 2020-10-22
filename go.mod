@@ -20,4 +20,6 @@ require (
 	github.com/rs/zerolog v1.19.0
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
 	github.com/spf13/viper v1.7.1
+	google.golang.org/grpc v1.32.0
+	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
 )

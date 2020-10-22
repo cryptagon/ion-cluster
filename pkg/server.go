@@ -1,128 +1,44 @@
 package cluster
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
+	"net"
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	pb "github.com/pion/ion-sfu/cmd/signal/grpc/proto"
+
+	grpcServer "github.com/pion/ion-sfu/cmd/signal/grpc/server"
+	jsonrpcServer "github.com/pion/ion-sfu/cmd/signal/json-rpc/server"
 	sfu "github.com/pion/ion-sfu/pkg"
 	"github.com/pion/ion-sfu/pkg/log"
-	"github.com/pion/webrtc/v3"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
+	"google.golang.org/grpc"
+
+	// pprof
+	_ "net/http/pprof"
 )
 
-type jsonPeer struct {
-	raft Raft
-	sfu.Peer
+// SignalConfig params for http listener / grpc / websocket server
+type SignalConfig struct {
+	Key      string
+	Cert     string
+	HTTPAddr string
+	GRPCAddr string
 }
 
-// Handle incoming RPC call events like join, answer, offer and trickle
-func (p *jsonPeer) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
-	replyError := func(err error) {
-		_ = conn.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{
-			Code:    500,
-			Message: fmt.Sprintf("%s", err),
-		})
-	}
-
-	switch req.Method {
-	case "join":
-		var join Join
-		err := json.Unmarshal(*req.Params, &join)
-		if err != nil {
-			log.Errorf("connect: error parsing offer: %v", err)
-			replyError(err)
-			break
-		}
-
-		answer, err := p.Join(join.Sid, join.Offer)
-		if err != nil {
-			replyError(err)
-			break
-		}
-
-		p.OnOffer = func(offer *webrtc.SessionDescription) {
-			if err := conn.Notify(ctx, "offer", offer); err != nil {
-				log.Errorf("error sending offer %s", err)
-			}
-
-		}
-		p.OnIceCandidate = func(candidate *webrtc.ICECandidateInit) {
-			if err := conn.Notify(ctx, "trickle", candidate); err != nil {
-				log.Errorf("error sending ice candidate %s", err)
-			}
-		}
-
-		_ = conn.Reply(ctx, req.ID, answer)
-
-	case "offer":
-		var negotiation Negotiation
-		err := json.Unmarshal(*req.Params, &negotiation)
-		if err != nil {
-			log.Errorf("connect: error parsing offer: %v", err)
-			replyError(err)
-			break
-		}
-
-		answer, err := p.Answer(negotiation.Desc)
-		if err != nil {
-			replyError(err)
-			break
-		}
-		_ = conn.Reply(ctx, req.ID, answer)
-
-	case "answer":
-		var negotiation Negotiation
-		err := json.Unmarshal(*req.Params, &negotiation)
-		if err != nil {
-			log.Errorf("connect: error parsing offer: %v", err)
-			replyError(err)
-			break
-		}
-
-		err = p.SetRemoteDescription(negotiation.Desc)
-		if err != nil {
-			replyError(err)
-		}
-
-	case "trickle":
-		var trickle Trickle
-		err := json.Unmarshal(*req.Params, &trickle)
-		if err != nil {
-			log.Errorf("connect: error parsing candidate: %v", err)
-			replyError(err)
-			break
-		}
-
-		err = p.Trickle(trickle.Candidate)
-		if err != nil {
-			replyError(err)
-		}
-	}
-}
-
-// WebsocketConfig params for http listener / websocket server
-type WebsocketConfig struct {
-	Key  string
-	Cert string
-	Addr string
-}
-
-// WebsocketServer hosts an embedded websocket signaling server
-type WebsocketServer struct {
+// Signal is the grpc/http/websocket signaling server
+type Signal struct {
 	sfu     *sfu.SFU
 	errChan chan error
 
-	config WebsocketConfig
+	config SignalConfig
 }
 
-// NewWebsocketServer creates a websocket signaling server
-func NewWebsocketServer(s *sfu.SFU, conf WebsocketConfig) (*WebsocketServer, chan error) {
+// NewSignal creates a signaling server
+func NewSignal(s *sfu.SFU, conf SignalConfig) (*Signal, chan error) {
 	e := make(chan error)
-	w := &WebsocketServer{
+	w := &Signal{
 		sfu:     s,
 		errChan: e,
 		config:  conf,
@@ -130,8 +46,8 @@ func NewWebsocketServer(s *sfu.SFU, conf WebsocketConfig) (*WebsocketServer, cha
 	return w, e
 }
 
-// Run listens for incoming websocket signaling requests
-func (s *WebsocketServer) Run() {
+// ServeWebsocket listens for incoming websocket signaling requests
+func (s *Signal) ServeWebsocket() {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -147,25 +63,45 @@ func (s *WebsocketServer) Run() {
 		}
 		defer c.Close()
 
-		p := jsonPeer{
-			sfu.NewPeer(s.sfu),
-		}
+		p := jsonrpcServer.NewJSONSignal(sfu.NewPeer(s.sfu))
 		defer p.Close()
 
-		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), &p)
+		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), p)
 		<-jc.DisconnectNotify()
 	}))
 
 	var err error
 	if s.config.Key != "" && s.config.Cert != "" {
-		log.Infof("Listening at https://[%s]", s.config.Addr)
-		err = http.ListenAndServeTLS(s.config.Addr, s.config.Cert, s.config.Key, nil)
+		log.Infof("Listening at https://[%s]", s.config.HTTPAddr)
+		err = http.ListenAndServeTLS(s.config.HTTPAddr, s.config.Cert, s.config.Key, nil)
 	} else {
-		log.Infof("Listening at http://[%s]", s.config.Addr)
-		err = http.ListenAndServe(s.config.Addr, nil)
+		log.Infof("Listening at http://[%s]", s.config.HTTPAddr)
+		err = http.ListenAndServe(s.config.HTTPAddr, nil)
 	}
 
 	if err != nil {
 		s.errChan <- err
+	}
+}
+
+// ServeGRPC serve grpc
+func (s *Signal) ServeGRPC() {
+	l, err := net.Listen("tcp", s.config.GRPCAddr)
+	if err != nil {
+		s.errChan <- err
+		return
+	}
+
+	gs := grpc.NewServer()
+	inst := grpcServer.GRPCSignal{SFU: s.sfu}
+	pb.RegisterSFUService(gs, &pb.SFUService{
+		Signal: inst.Signal,
+	})
+
+	log.Infof("GRPC Listening at %s", s.config.GRPCAddr)
+	if err := gs.Serve(l); err != nil {
+		log.Errorf("err=%v", err)
+		s.errChan <- err
+		return
 	}
 }

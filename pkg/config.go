@@ -13,7 +13,7 @@ import (
 
 // RootConfig is the root config read in from config.toml
 type RootConfig struct {
-	Signal  WebsocketConfig
+	Signal  SignalConfig
 	SFU     sfu.Config
 	Cluster NodeConfig
 }
