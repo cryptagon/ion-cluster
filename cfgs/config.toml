@@ -11,7 +11,7 @@ bootstrap = true
 
 [signal]
 httpaddr = ":7000"
-grpcaddr = ":7100"
+grpcaddr = ":50051"
 key = ""
 cert = ""
 
