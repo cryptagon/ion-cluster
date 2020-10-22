@@ -29,6 +29,7 @@ type SignalConfig struct {
 
 // Signal is the grpc/http/websocket signaling server
 type Signal struct {
+	c       coordinator
 	sfu     *sfu.SFU
 	errChan chan error
 
