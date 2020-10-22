@@ -3,6 +3,7 @@ module github.com/pion/ion-cluster
 go 1.15
 
 require (
+	github.com/coreos/etcd v3.3.13+incompatible
 	github.com/go-kit/kit v0.8.0
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
