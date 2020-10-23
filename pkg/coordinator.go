@@ -33,12 +33,14 @@ func NewCoordinator(conf RootConfig) (coordinator, error) {
 	if conf.Coordinator.Etcd != nil {
 		return newCoordinatorEtcd(conf)
 	}
+	if conf.Coordinator.Mem != nil {
+		return &memCoordinator{
+			nodeID:   uuid.New(),
+			endpoint: conf.Endpoint(),
+		}, nil
+	}
 
 	return nil, fmt.Errorf("error no coodinator configured")
-	// return &memCoordinator{
-	// 	nodeID:   uuid.New(),
-	// 	endpoint: conf.Endpoint(),
-	// }, nil
 }
 
 type memCoordinator struct {
@@ -58,17 +60,6 @@ func (m *memCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, err
 		Redirect:  false,
 	}, nil
 }
-
-// func (m *memCoordinator) getClientForNode(nodeID string) (*pb.SFUClient, error) {
-// 	// it would be better if we returned a pb.SFUClient mock here that acted like a local peer
-// 	conn, err := grpc.Dial(m.endpoint, grpc.WithInsecure(), grpc.WithBlock())
-// 	if err != nil {
-// 		return nil, fmt.Errorf("memCoordinator couldn't create loopback grpc connection")
-// 	}
-
-// 	client := pb.NewSFUClient(conn)
-// 	return &client, nil
-// }
 
 type etcdCoordinator struct {
 	nodeID   string
@@ -98,12 +89,15 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 
 func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, error) {
 	// This operation is only alloted 5 seconds to complete
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
 	s, err := concurrency.NewSession(e.client, concurrency.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
 
+	// Acquire the lock for this sessionID
 	key := fmt.Sprintf("/session/%v", sessionID)
 	mu := concurrency.NewMutex(s, key)
 	if err := mu.Lock(ctx); err != nil {
@@ -112,12 +106,15 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	}
 	defer mu.Unlock(ctx)
 
+	// Check to see if sessionMeta exists for this key
 	gr, err := e.client.Get(ctx, key)
 	if err != nil {
 		log.Errorf("error looking up session")
 		return nil, err
 	}
 
+	// Session already exists somewhere in the cluster
+	// return the existing meta to the user
 	if gr.Count > 0 {
 		log.Debugf("found session")
 
@@ -132,9 +129,8 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 		return &meta, nil
 	}
 
-	// session doesn't already exist, so lets take it
+	// Session does not already exist, so lets take it
 	// @todo load balance here / be smarter
-
 	meta := sessionMeta{
 		SessionID: sessionID,
 		NodeID:    e.nodeID,
