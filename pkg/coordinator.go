@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/pborman/uuid"
-	"github.com/pion/ion-sfu/pkg/log"
+	log "github.com/pion/ion-log"
 	"google.golang.org/grpc"
 
 	"github.com/coreos/etcd/clientv3"

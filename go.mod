@@ -12,7 +12,7 @@ require (
 	github.com/lucsky/cuid v1.0.2 // indirect
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/ion-log v0.0.0-20201018162658-5afa48038e76
-	github.com/pion/ion-sfu v1.0.27
+	github.com/pion/ion-sfu v1.0.28
 	github.com/pion/sdp/v2 v2.4.0 // indirect
 	github.com/pion/webrtc/v3 v3.0.0-beta.9
 	github.com/rs/zerolog v1.19.0 // indirect

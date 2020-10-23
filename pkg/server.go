@@ -7,8 +7,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 
+	log "github.com/pion/ion-log"
 	sfu "github.com/pion/ion-sfu/pkg"
-	"github.com/pion/ion-sfu/pkg/log"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 

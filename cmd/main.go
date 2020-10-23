@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/viper"
 
 	cluster "github.com/pion/ion-cluster/pkg"
+	log "github.com/pion/ion-log"
 	sfu "github.com/pion/ion-sfu/pkg"
-	"github.com/pion/ion-sfu/pkg/log"
 )
 
 var (
@@ -93,7 +93,9 @@ func main() {
 		showHelp()
 		os.Exit(-1)
 	}
-	log.Init(conf.SFU.Log.Level, conf.SFU.Log.Fix)
+	fixByFile := []string{"asm_amd64.s", "proc.go", "icegatherer.go"}
+	fixByFunc := []string{}
+	log.Init(conf.SFU.Log.Level, fixByFile, fixByFunc)
 
 	log.Infof("--- Starting SFU Node ---")
 	s := sfu.NewSFU(conf.SFU)
