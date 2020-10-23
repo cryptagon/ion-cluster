@@ -2,13 +2,26 @@ module github.com/pion/ion-cluster
 
 go 1.15
 
+replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
+
 require (
+	github.com/coreos/etcd v3.3.25+incompatible
+	github.com/envoyproxy/go-control-plane v0.9.4 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/lucsky/cuid v1.0.2 // indirect
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/ion-log v0.0.0-20201018162658-5afa48038e76
-	github.com/pion/ion-sfu v1.0.24
-	github.com/pion/webrtc/v3 v3.0.0-beta.7
+	github.com/pion/ion-sfu v1.0.27
+	github.com/pion/sdp/v2 v2.4.0 // indirect
+	github.com/pion/webrtc/v3 v3.0.0-beta.9
+	github.com/rs/zerolog v1.19.0 // indirect
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
+	github.com/spf13/cobra v1.1.1 // indirect
 	github.com/spf13/viper v1.7.1
+	go.etcd.io/etcd v3.3.25+incompatible
+	google.golang.org/grpc v1.32.0
+	google.golang.org/grpc/examples v0.0.0-20201022203757-eb7fc22e4562 // indirect
+	gopkg.in/ini.v1 v1.51.1 // indirect
+	sigs.k8s.io/yaml v1.2.0 // indirect
 )

@@ -80,6 +80,7 @@ func (s *Signal) ServeWebsocket() {
 			log.Debugf("error marshaling nodeMeta: %v", err)
 			return
 		}
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(payload)
 	}))

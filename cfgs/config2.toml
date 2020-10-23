@@ -8,7 +8,7 @@ hosts = ["localhost:2379"]
 
 [signal]
 fqdn = "localhost"
-httpaddr = ":7000"
+httpaddr = ":7001"
 grpcaddr = ":50051"
 key = ""
 cert = ""

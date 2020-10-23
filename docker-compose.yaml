@@ -6,9 +6,7 @@ services:
     entrypoint: "/usr/local/bin/etcd"
     command: "--listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2379"
     ports:
-      - 2389:2379
-    networks:
-      - ionnet
+      - 2379:2379
   sfuA:
     image: pionwebrtc/ion-cluster:latest
     build:
@@ -20,8 +18,8 @@ services:
     ports:
       - "5000-5100:5000-5100/udp"
       - "7000:7000"
-    networks:
-      - ionnet
+        #    networks:
+        #      - ionnet
   sfuB:
     image: pionwebrtc/ion-cluster:latest
     links:
@@ -37,12 +35,12 @@ services:
     ports:
       - "5200-5300:5200-5300/udp"
       - "7001:7001"
-    networks:
-      - ionnet
+        #   networks:
+        #     - ionnet
 
-networks:
-  ionnet:
-    external: true
-    name: ionnet
-    driver: bridge
+        #networks:
+        #  ionnet:
+        #    external: true
+        #    name: ionnet
+        #    driver: bridge
  

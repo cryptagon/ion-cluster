@@ -98,7 +98,11 @@ func main() {
 	log.Infof("--- Starting SFU Node ---")
 	s := sfu.NewSFU(conf.SFU)
 
-	coordinator := cluster.NewCoordinator(conf)
+	coordinator, err := cluster.NewCoordinator(conf)
+	if err != nil {
+		log.Errorf("error creating coordinator: %v", err)
+		return
+	}
 
 	// Spin up websocket
 	sServer, sError := cluster.NewSignal(s, coordinator, conf.Signal)

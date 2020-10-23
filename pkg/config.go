@@ -39,6 +39,6 @@ type CoordinatorConfig struct {
 	}
 	Etcd *struct {
 		Enabled bool
-		Host    string
+		Hosts   []string
 	}
 }
