@@ -131,13 +131,26 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 
 	// Session does not already exist, so lets take it
 	// @todo load balance here / be smarter
+
+	// First lets create a lease for the sessionKey
+	lease, err := e.client.Grant(ctx, 2)
+	if err != nil {
+		log.Errorf("error acquiring lease for session key %v: %v", key, err)
+		return nil, err
+	}
+	leaseKeepAlive, err := e.client.KeepAlive(context.Background(), lease.ID)
+	if err != nil {
+		log.Errorf("error activating keepAlive for lease %v: %v", lease.ID, err)
+	}
+	<-leaseKeepAlive
+
 	meta := sessionMeta{
 		SessionID: sessionID,
 		NodeID:    e.nodeID,
 		Endpoint:  e.endpoint,
 	}
 	payload, _ := json.Marshal(&meta)
-	_, err = e.client.Put(ctx, key, string(payload))
+	_, err = e.client.Put(ctx, key, string(payload), clientv3.WithLease(lease.ID))
 	if err != nil {
 		log.Errorf("error storing session meta")
 		return nil, err
