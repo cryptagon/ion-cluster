@@ -2,7 +2,10 @@ module github.com/pion/ion-cluster
 
 go 1.15
 
-replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
+replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201030223555-3fa6d2a5cc19
+
+//replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
+
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
 require (
@@ -16,7 +19,7 @@ require (
 	github.com/pion/ion-log v0.0.0-20201024224650-e6b94dfeaf1d
 	github.com/pion/ion-sfu v1.0.28
 	github.com/pion/sdp/v2 v2.4.0 // indirect
-	github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201027193323-3e64df35adfa
+	github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201030205602-60db5090fc93
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
 	github.com/spf13/cobra v1.1.1 // indirect
 	github.com/spf13/viper v1.7.1

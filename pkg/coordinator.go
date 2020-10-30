@@ -60,6 +60,7 @@ func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
 	return &localCoordinator{
 		nodeID:       uuid.New(),
 		nodeEndpoint: conf.Endpoint(),
+		sessions:     make(map[string]*sfu.Session),
 		w:            w,
 	}, nil
 }
@@ -73,6 +74,10 @@ func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
 	}
 
 	s := sfu.NewSession(sessionID)
+	s.OnClose(func() {
+		c.onSessionClosed(sessionID)
+	})
+
 	c.sessions[sessionID] = s
 	return s
 }
@@ -87,10 +92,7 @@ func (c *localCoordinator) NewWebRTCTransport(sid string, me sfu.MediaEngine) (*
 }
 
 func (c *localCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, error) {
-	s := c.ensureSession(sessionID)
-	s.OnClose(func() {
-		c.onSessionClosed(sessionID)
-	})
+	c.ensureSession(sessionID)
 
 	return &sessionMeta{
 		SessionID:    sessionID,
@@ -104,7 +106,6 @@ func (c *localCoordinator) onSessionClosed(sessionID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	log.Debugf("session %v closed", sessionID)
-
 	delete(c.sessions, sessionID)
 }
 
@@ -216,6 +217,10 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	}
 
 	return &meta, nil
+}
+
+func (c *etcdCoordinator) NewWebRTCTransport(sid string, me sfu.MediaEngine) (*sfu.WebRTCTransport, error) {
+	return nil, fmt.Errorf("not yet implemented")
 }
 
 func (e *etcdCoordinator) onSessionClosed(sessionID string) {
