@@ -1,11 +1,13 @@
 package cluster
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/koding/websocketproxy"
 
 	log "github.com/pion/ion-log"
 	sfu "github.com/pion/ion-sfu/pkg"
@@ -19,7 +21,6 @@ import (
 // Signal is the grpc/http/websocket signaling server
 type Signal struct {
 	c       coordinator
-	sfu     *sfu.SFU
 	errChan chan error
 
 	config SignalConfig
@@ -29,7 +30,6 @@ type Signal struct {
 func NewSignal(s *sfu.SFU, c coordinator, conf SignalConfig) (*Signal, chan error) {
 	e := make(chan error)
 	w := &Signal{
-		sfu:     s,
 		c:       c,
 		errChan: e,
 		config:  conf,
@@ -49,23 +49,6 @@ func (s *Signal) ServeWebsocket() {
 		WriteBufferSize: 1024,
 	}
 
-	r.Handle("/ws", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c, err := upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			panic(err)
-		}
-		defer c.Close()
-
-		p := JSONSignal{
-			s.c,
-			sfu.NewPeer(s.sfu),
-		}
-		defer p.Close()
-
-		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), &p)
-		<-jc.DisconnectNotify()
-	}))
-
 	r.Handle("/session/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -75,14 +58,34 @@ func (s *Signal) ServeWebsocket() {
 			return
 		}
 
-		payload, err := json.Marshal(meta)
-		if err != nil {
-			log.Debugf("error marshaling nodeMeta: %v", err)
+		if meta.Redirect {
+			endpoint := fmt.Sprintf("%v/session/%v", meta.NodeEndpoint, meta.SessionID)
+			url, err := url.Parse(endpoint)
+			if err != nil {
+				log.Errorf("error parsing backend url to proxy websocket")
+			}
+			proxy := websocketproxy.NewProxy(url)
+			proxy.Upgrader = &upgrader
+			log.Debugf("starting proxy for session %v -> node %v @ %v", meta.SessionID, meta.NodeID, endpoint)
+			proxy.ServeHTTP(w, r)
+			log.Debugf("closed proxy for session %v -> node %v @ %v", meta.SessionID, meta.NodeID, endpoint)
 			return
 		}
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(payload)
+
+		c, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			panic(err)
+		}
+		defer c.Close()
+
+		p := JSONSignal{
+			s.c,
+			sfu.NewPeer(s.c),
+		}
+		defer p.Close()
+
+		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), &p)
+		<-jc.DisconnectNotify()
 	}))
 
 	http.Handle("/", r)

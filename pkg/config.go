@@ -34,7 +34,7 @@ type SignalConfig struct {
 }
 
 type CoordinatorConfig struct {
-	Mem *struct {
+	Local *struct {
 		Enabled bool
 	}
 	Etcd *struct {
