@@ -1,15 +1,15 @@
 # local coordinator used for testing / single node
-[coordinator.local]
-enabled = true
-
-# [coordinator.etcd]
+# [coordinator.local]
 # enabled = true
-# hosts = ["localhost:2379"]
+
+[coordinator.etcd]
+enabled = true
+hosts = ["localhost:2379"]
 
 [signal]
 fqdn = "localhost"
 httpaddr = ":7000"
-grpcaddr = ":50051"
+grpcaddr = ":50050"
 key = ""
 cert = ""
 

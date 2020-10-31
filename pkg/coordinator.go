@@ -115,8 +115,9 @@ type etcdCoordinator struct {
 	nodeEndpoint string
 	client       *clientv3.Client
 
-	sessionLeases map[string]context.CancelFunc
 	w             sfu.WebRTCTransportConfig
+	localSessions map[string]*sfu.Session
+	sessionLeases map[string]context.CancelFunc
 }
 
 func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
@@ -136,8 +137,9 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 		client:        cli,
 		nodeID:        uuid.New(),
 		nodeEndpoint:  conf.Endpoint(),
-		sessionLeases: make(map[string]context.CancelFunc),
 		w:             w,
+		sessionLeases: make(map[string]context.CancelFunc),
+		localSessions: make(map[string]*sfu.Session),
 	}, nil
 }
 
@@ -219,8 +221,30 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	return &meta, nil
 }
 
-func (c *etcdCoordinator) NewWebRTCTransport(sid string, me sfu.MediaEngine) (*sfu.WebRTCTransport, error) {
-	return nil, fmt.Errorf("not yet implemented")
+func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if s, ok := e.localSessions[sessionID]; ok {
+		return s
+	}
+
+	s := sfu.NewSession(sessionID)
+	s.OnClose(func() {
+		e.onSessionClosed(sessionID)
+	})
+
+	e.localSessions[sessionID] = s
+	return s
+}
+
+func (e *etcdCoordinator) NewWebRTCTransport(sid string, me sfu.MediaEngine) (*sfu.WebRTCTransport, error) {
+	session := e.ensureSession(sid)
+	t, err := sfu.NewWebRTCTransport(session, me, e.w)
+	if err != nil {
+		return nil, err
+	}
+	return t, nil
 }
 
 func (e *etcdCoordinator) onSessionClosed(sessionID string) {
@@ -254,6 +278,9 @@ func (e *etcdCoordinator) onSessionClosed(sessionID string) {
 		log.Errorf("etcdCoordinator error deleting sessionMeta for %v", sessionID)
 		return
 	}
+
+	// Delete localSession
+	delete(e.localSessions, sessionID)
 
 	log.Debugf("etcdCoordinator canceled /session/%v lease", sessionID)
 }

@@ -1,5 +1,5 @@
 # local coordinator used for testing / single node
-# [coordinator.mem]
+# [coordinator.local]
 # enabled = true
 
 [coordinator.etcd]
@@ -14,21 +14,10 @@ key = ""
 cert = ""
 
 [sfu.router]
-# pass bandwidth feeback from subs to pubs
-subrembfeedback = false
 # Limit the remb bandwidth in kbps
 # zero means no limits
-maxbandwidth = 400
-# Rate limit nack packets from senders to 1 nack per maxNackTime in seconds
-# zero means no rate limit
-maxnacktime = 1
-
-[sfu.router.video]
-# the remb cycle sending to pub, this told the pub it's bandwidth
-rembcycle = 2
-# transport-cc cycle in (ms) (experiment feature)
-tcccycle = 0
-# max buffer time by ms
+maxbandwidth = 1500
+# max buffer time by ms for video tracks
 maxbuffertime = 1000
 
 [sfu.router.simulcast]
@@ -44,11 +33,12 @@ enabletemporallayer = false
 # portrange = [50000, 60000]
 # if sfu behind nat, set iceserver
 # [[webrtc.iceserver]]
-# urls = ["stun:stun.stunprotocol.org:3478"]
+urls = ["stun:stun.stunprotocol.org:3478"]
 # [[webrtc.iceserver]]
 # urls = ["turn:turn.awsome.org:3478"]
 # username = "awsome"
 # credential = "awsome"
+sdpsemantics = "unified-plan"
 
 # In case you're deploying ion-sfu on a server which is configured with
 # a 1:1 NAT (e.g., Amazon EC2), you might want to also specify the public
