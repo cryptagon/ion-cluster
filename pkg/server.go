@@ -88,6 +88,10 @@ func (s *Signal) ServeWebsocket() {
 		<-jc.DisconnectNotify()
 	}))
 
+	r.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
 	http.Handle("/", r)
 
 	var err error

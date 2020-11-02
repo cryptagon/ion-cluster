@@ -66,6 +66,10 @@ func load() bool {
 		return false
 	}
 
+	if host := os.Getenv("ION_CLUSTER_HOST"); host != "" {
+		conf.Signal.FQDN = host
+	}
+
 	fmt.Printf("config %s load ok!\n", file)
 	return true
 }
