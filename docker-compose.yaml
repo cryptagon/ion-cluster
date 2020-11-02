@@ -25,7 +25,7 @@ services:
     links:
       - sfuA
     build:
-      dockerfile: cmd/server/cluster/Dockerfile
+      dockerfile: Dockerfile
       context: .
     command: ["-c", "/configs/sfu.toml", "-a", ":7001"]
     volumes:
