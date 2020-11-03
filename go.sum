@@ -64,6 +64,16 @@ github.com/billylindeman/ion-sfu v1.0.4-0.20201102172337-22bac5b1b529 h1:NsG6w/O
 github.com/billylindeman/ion-sfu v1.0.4-0.20201102172337-22bac5b1b529/go.mod h1:Ee84FGXj+Dx3t3Sk+5RMSg/qSsKqtuVxSZbUs6j/7+A=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201102214235-8fe76d061646 h1:DP8ndXUUngiKrIngSoDvM8bEQ0mnlhGdbXFvnHlS7Lk=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201102214235-8fe76d061646/go.mod h1:Ee84FGXj+Dx3t3Sk+5RMSg/qSsKqtuVxSZbUs6j/7+A=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201103202420-94d634c10db2 h1:TS6Jryfx7Z6oZBobklfZ65vLnJThbRAlYsftn9ycUj0=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201103202420-94d634c10db2/go.mod h1:thJTSFZU2Cc+ABNy2zrLCMqI4n/18unNukyJdkyfJqM=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201104195236-4862073b9454 h1:kV5CEViQx3NM6NjXmqmdb1VsuUibZ6vDHxorhgqay88=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201104195236-4862073b9454/go.mod h1:+/L13ZkRWrZ56Y8cPUoDanDKmFwNNqqn+6DvSf5qPxk=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201104230759-4c47a6195577 h1:lWbSGF1bQgN8FrPXvAor4aSHMKDre0GiMyiSd5svsyw=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201104230759-4c47a6195577/go.mod h1:DlG7Zfy6QiNHde2Ao/GvMkOVX82+4G/GP7iNuGQGLXY=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201105185148-06844feb83b0 h1:wFuw2KUMHEpi473PvXZWMofedzOvuWlYit+s3X2gLrk=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201105185148-06844feb83b0/go.mod h1:fG9wIDXGRWoVCM3M1XM9thm4qGj5YCLRWLeGyJ+t0M0=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201105185346-00c61df3c739 h1:lh+LUtz7gMB8g9cx/fOjCEVLp0KC+0UI6VWpQnawEls=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201105185346-00c61df3c739/go.mod h1:fG9wIDXGRWoVCM3M1XM9thm4qGj5YCLRWLeGyJ+t0M0=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/blackjack/webcam v0.0.0-20200313125108-10ed912a8539/go.mod h1:G0X+rEqYPWSq0dG8OMf8M446MtKytzpPjgS3HbdOJZ4=
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
@@ -128,6 +138,7 @@ github.com/go-stack/stack v1.8.0/go.mod h1:v0f6uXyyMGvRgIKkXu+yp6POWl0qKG85gN/me
 github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/gogo/protobuf v1.2.1 h1:/s5zKNz0uPFCZ5hddgPdo2TK2TVrUNMn0OOX8/aZMTE=
 github.com/gogo/protobuf v1.2.1/go.mod h1:hp+jE20tsWTFYpLwKvXlhS1hjn+gTNwPg2I6zVXpSg4=
+github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
 github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6/go.mod h1:cIg4eruTrX1D+g88fzRXU5OdNfaM+9IcxsU14FzY7Hc=
@@ -351,6 +362,8 @@ github.com/pion/ion-log v0.0.0-20201018162658-5afa48038e76 h1:e1+7hmitdiDKC3lGwT
 github.com/pion/ion-log v0.0.0-20201018162658-5afa48038e76/go.mod h1:turscGxpzm5X2PUoMMqAObZPHvk3iujBWcR6bnj1fWY=
 github.com/pion/ion-log v0.0.0-20201024224650-e6b94dfeaf1d h1:lG2DmuOV2bSoncAABwIvFOi4/yptRsk/n9PkXbMAxT0=
 github.com/pion/ion-log v0.0.0-20201024224650-e6b94dfeaf1d/go.mod h1:jwcla9KoB9bB/4FxYDSRJPcPYSLp5XiUUMnOLaqwl4E=
+github.com/pion/ion-log v1.0.0 h1:2lJLImCmfCWCR38hLWsjQfBWe6NFz/htbqiYHwvOP/Q=
+github.com/pion/ion-log v1.0.0/go.mod h1:jwcla9KoB9bB/4FxYDSRJPcPYSLp5XiUUMnOLaqwl4E=
 github.com/pion/ion-sfu v1.0.0/go.mod h1:P7XNrdH2czmgTaVRdXd4ze5Dz+eWXQuaLm+FFZO+iUA=
 github.com/pion/ion-sfu v1.0.1/go.mod h1:P7XNrdH2czmgTaVRdXd4ze5Dz+eWXQuaLm+FFZO+iUA=
 github.com/pion/ion-sfu v1.0.2/go.mod h1:P7XNrdH2czmgTaVRdXd4ze5Dz+eWXQuaLm+FFZO+iUA=
@@ -444,6 +457,10 @@ github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201027193323-3e64df35adfa h1:eyg97N
 github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201027193323-3e64df35adfa/go.mod h1:GlriYYHJ5KkNsCunm3oFDPql4TDTrrNoI9iSWWSnafA=
 github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201030205602-60db5090fc93 h1:h6kVKATdkUm7sFZQ//Q5t/2VKd7BZpO0Ozc9q94D4RI=
 github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201030205602-60db5090fc93/go.mod h1:GlriYYHJ5KkNsCunm3oFDPql4TDTrrNoI9iSWWSnafA=
+github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201103052241-78f7c978fe51 h1:croACaiFnjNtvUG8SirC+wTkQ8Y1/QxP+5e9J9VXLQ8=
+github.com/pion/webrtc/v3 v3.0.0-beta.10.0.20201103052241-78f7c978fe51/go.mod h1:UbmDN5G82nXLXAiSIo0HYU68GN6z09jeKSNEaDUzFvY=
+github.com/pion/webrtc/v3 v3.0.0-beta.11 h1:xTle6fm767JmUoTy5LXpEFkSBRY+F1EPBy6MBek8QHc=
+github.com/pion/webrtc/v3 v3.0.0-beta.11/go.mod h1:UbmDN5G82nXLXAiSIo0HYU68GN6z09jeKSNEaDUzFvY=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
@@ -667,6 +684,8 @@ golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0 h1:5kGOVHlq0euqwzgTC9Vu15p6f
 golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
 golang.org/x/net v0.0.0-20201024042810-be3efd7ff127 h1:pZPp9+iYUqwYKLjht0SDBbRCRK/9gAXDy7pz5fRDpjo=
 golang.org/x/net v0.0.0-20201024042810-be3efd7ff127/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
+golang.org/x/net v0.0.0-20201031054903-ff519b6c9102 h1:42cLlJJdEh+ySyeUUbEQ5bsTiq8voBeTuweGVkY6Puw=
+golang.org/x/net v0.0.0-20201031054903-ff519b6c9102/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20181017192945-9dcd33a902f4/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
