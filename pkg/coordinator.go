@@ -24,7 +24,7 @@ var (
 type sessionMeta struct {
 	SessionID    string `json:"session_id"`
 	NodeID       string `json:"node_id"`
-	NodeEndpoint string `json:"node_url"`
+	NodeEndpoint string `json:"node_endpoint"`
 	Redirect     bool   `json:"redirect"`
 }
 
