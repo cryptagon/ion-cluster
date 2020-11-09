@@ -67,7 +67,9 @@ func (s *Signal) ServeWebsocket() {
 			proxy := websocketproxy.NewProxy(url)
 			proxy.Upgrader = &upgrader
 			log.Debugf("starting proxy for session %v -> node %v @ %v", meta.SessionID, meta.NodeID, endpoint)
+			prometheusGaugeProxyClients.Inc()
 			proxy.ServeHTTP(w, r)
+			prometheusGaugeProxyClients.Dec()
 			log.Debugf("closed proxy for session %v -> node %v @ %v", meta.SessionID, meta.NodeID, endpoint)
 			return
 		}
@@ -88,6 +90,7 @@ func (s *Signal) ServeWebsocket() {
 		<-jc.DisconnectNotify()
 	}))
 
+	r.Handle("/metrics", metricsHandler())
 	r.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))

@@ -7,6 +7,16 @@ services:
     command: "--listen-client-urls http://0.0.0.0:2379 --advertise-client-urls http://0.0.0.0:2379"
     ports:
       - 2379:2379
+    networks:
+      - ionnet
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - "./cfgs/prometheus.yml:/etc/prometheus/prometheus.yml"
+    networks:
+      - ionnet
   sfuA:
     image: pionwebrtc/ion-cluster:latest
     build:
@@ -14,12 +24,14 @@ services:
       context: .
     command: ["-c", "/configs/sfu.toml", "-a", ":7000"]
     volumes:
-      - "./cmd/server/cluster/configs/config-a.toml:/configs/sfu.toml"
+      - "./cfgs/config-docker.toml:/configs/sfu.toml"
+    environment:
+      ION_CLUSTER_HOST: sfuA
     ports:
       - "5000-5100:5000-5100/udp"
       - "7000:7000"
-        #    networks:
-        #      - ionnet
+    networks:
+      - ionnet
   sfuB:
     image: pionwebrtc/ion-cluster:latest
     links:
@@ -29,18 +41,18 @@ services:
       context: .
     command: ["-c", "/configs/sfu.toml", "-a", ":7001"]
     volumes:
-      - "./cmd/server/cluster/configs/config-b.toml:/configs/sfu.toml"
+      - "./cfgs/config-docker.toml:/configs/sfu.toml"
     environment:
-      IONSFU_PEERS: "sfuA"
+      ION_CLUSTER_HOST: sfuB
     ports:
       - "5200-5300:5200-5300/udp"
       - "7001:7001"
-        #   networks:
-        #     - ionnet
+    networks:
+      - ionnet
 
-        #networks:
-        #  ionnet:
-        #    external: true
-        #    name: ionnet
-        #    driver: bridge
- 
+networks:
+  ionnet:
+    external: true
+    name: ionnet
+    driver: bridge
+

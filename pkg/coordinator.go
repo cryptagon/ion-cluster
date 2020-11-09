@@ -77,6 +77,7 @@ func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
 	s.OnClose(func() {
 		c.onSessionClosed(sessionID)
 	})
+	prometheusGaugeSessions.Inc()
 
 	c.sessions[sessionID] = s
 	return s
@@ -107,6 +108,7 @@ func (c *localCoordinator) onSessionClosed(sessionID string) {
 	defer c.mu.Unlock()
 	log.Debugf("session %v closed", sessionID)
 	delete(c.sessions, sessionID)
+	prometheusGaugeSessions.Dec()
 }
 
 type etcdCoordinator struct {
@@ -233,6 +235,7 @@ func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
 	s.OnClose(func() {
 		e.onSessionClosed(sessionID)
 	})
+	prometheusGaugeSessions.Inc()
 
 	e.localSessions[sessionID] = s
 	return s
@@ -281,6 +284,7 @@ func (e *etcdCoordinator) onSessionClosed(sessionID string) {
 
 	// Delete localSession
 	delete(e.localSessions, sessionID)
+	prometheusGaugeSessions.Dec()
 
 	log.Debugf("etcdCoordinator canceled /session/%v lease", sessionID)
 }
