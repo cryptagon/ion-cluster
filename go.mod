@@ -2,9 +2,8 @@ module github.com/pion/ion-cluster
 
 go 1.15
 
-replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201105185346-00c61df3c739
-
-//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu tandem-buffer-test
+//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master-tandem
+replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201109212923-521fa5fe66e5
 
 //replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 
