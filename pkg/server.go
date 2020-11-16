@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -87,7 +88,16 @@ func (s *Signal) ServeWebsocket() {
 		defer p.Close()
 
 		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), &p)
-		<-jc.DisconnectNotify()
+		ticker := time.NewTicker(5 * time.Second)
+
+		for {
+			select {
+			case <-ticker.C:
+				jc.Notify(r.Context(), "heartbeat", nil, nil)
+			case <-jc.DisconnectNotify():
+				return 
+			}
+		}
 	}))
 
 	r.Handle("/metrics", metricsHandler())
