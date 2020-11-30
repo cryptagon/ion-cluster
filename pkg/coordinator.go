@@ -75,14 +75,21 @@ func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
 	c.sessions[sessionID] = s
 	return s
 }
-
-func (c *localCoordinator) NewWebRTCTransport(sid string, me sfu.MediaEngine) (*sfu.WebRTCTransport, error) {
+func (c *localCoordinator) NewTransport(sid, pid string, me sfu.MediaEngine) (*sfu.Session, *sfu.Publisher, *sfu.Subscriber, error) {
 	session := c.ensureSession(sid)
-	t, err := sfu.NewWebRTCTransport(session, me, c.w)
+
+	sub, err := sfu.NewSubscriber(session, pid, me, c.w)
+
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
-	return t, nil
+
+	pub, err := sfu.NewPublisher(session, pid, me, c.w)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return session, pub, sub, nil
 }
 
 func (c *localCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, error) {

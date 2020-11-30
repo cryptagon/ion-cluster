@@ -146,13 +146,21 @@ func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
 	return s
 }
 
-func (e *etcdCoordinator) NewWebRTCTransport(sid string, me sfu.MediaEngine) (*sfu.WebRTCTransport, error) {
+func (e *etcdCoordinator) NewTransport(sid, pid string, me sfu.MediaEngine) (*sfu.Session, *sfu.Publisher, *sfu.Subscriber, error) {
 	session := e.ensureSession(sid)
-	t, err := sfu.NewWebRTCTransport(session, me, e.w)
+
+	sub, err := sfu.NewSubscriber(session, pid, me, e.w)
+
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
-	return t, nil
+
+	pub, err := sfu.NewPublisher(session, pid, me, e.w)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	return session, pub, sub, nil
 }
 
 func (e *etcdCoordinator) onSessionClosed(sessionID string) {
