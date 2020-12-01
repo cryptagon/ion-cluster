@@ -112,6 +112,8 @@ github.com/billylindeman/ion-sfu v1.0.4-0.20201114011747-259547d31776 h1:M9RONXj
 github.com/billylindeman/ion-sfu v1.0.4-0.20201114011747-259547d31776/go.mod h1:DSsRA1fm5CIPp/adlVsJnRVlHy6fm5uo6VyDWkiSI30=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201130221222-87e7ea55563b h1:C2JED9QdxoeSUJ2c3e/ORbJkRz2BrMOZnTU1jO2DT8c=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201130221222-87e7ea55563b/go.mod h1:myp3DIwptKEBeVKn0i0nQpr1DMMEtfaqs+8MzA/Ev2Q=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201201223909-7198ca69ebf6 h1:YKkVeZk8N3l5P3DGmPmOyWL6z/GH9545SZQFXxaeesA=
+github.com/billylindeman/ion-sfu v1.0.4-0.20201201223909-7198ca69ebf6/go.mod h1:myp3DIwptKEBeVKn0i0nQpr1DMMEtfaqs+8MzA/Ev2Q=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/blackjack/webcam v0.0.0-20200313125108-10ed912a8539/go.mod h1:G0X+rEqYPWSq0dG8OMf8M446MtKytzpPjgS3HbdOJZ4=
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
