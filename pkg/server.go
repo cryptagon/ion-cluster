@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -81,6 +82,7 @@ func (s *Signal) ServeWebsocket() {
 		defer c.Close()
 
 		p := JSONSignal{
+			sync.Mutex{},
 			s.c,
 			sfu.NewPeer(s.c),
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	log "github.com/pion/ion-log"
 	sfu "github.com/pion/ion-sfu/pkg"
@@ -29,12 +30,16 @@ type Trickle struct {
 }
 
 type JSONSignal struct {
-	c coordinator
+	mu sync.Mutex
+	c  coordinator
 	*sfu.Peer
 }
 
 // Handle incoming RPC call events like join, answer, offer and trickle
 func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	replyError := func(err error) {
 		_ = conn.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{
 			Code:    500,
@@ -78,7 +83,6 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			if err := conn.Notify(ctx, "offer", offer); err != nil {
 				log.Errorf("error sending offer %s", err)
 			}
-
 		}
 		p.OnIceCandidate = func(candidate *webrtc.ICECandidateInit, target int) {
 			if err := conn.Notify(ctx, "trickle", Trickle{
