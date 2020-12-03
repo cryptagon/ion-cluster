@@ -52,6 +52,23 @@ func (s *Signal) ServeWebsocket() {
 
 	r.Handle("/session/{id}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
+		sid := vars["id"]
+
+		if s.config.Auth.Enabled {
+			token, err := authGetAndValidateToken(s.config.Auth, r)
+			if err != nil {
+				log.Errorf("error authenticating token => %s", err)
+				http.Error(w, "Invalid Token", http.StatusForbidden)
+				return
+			}
+
+			log.Debugf("valid token with claims %#v", token)
+			if token.SID != sid {
+				log.Errorf("invalid claims for session %s => %s", sid, err)
+				http.Error(w, "Invalid Token", http.StatusForbidden)
+				return
+			}
+		}
 
 		meta, err := s.c.getOrCreateSession(vars["id"])
 		if err != nil {
