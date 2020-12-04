@@ -11,6 +11,7 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
 require (
 	github.com/coreos/etcd v3.3.25+incompatible
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/envoyproxy/go-control-plane v0.9.4 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
@@ -21,6 +22,7 @@ require (
 	github.com/pion/ion-sfu v1.0.28
 	github.com/pion/sdp/v2 v2.4.0 // indirect
 	github.com/pion/webrtc/v3 v3.0.0-beta.12.0.20201115002753-64bbf7eea97d
+	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.8.0
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
 	github.com/spf13/cobra v1.1.1 // indirect

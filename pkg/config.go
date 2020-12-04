@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	sfu "github.com/pion/ion-sfu/pkg"
 )
 
@@ -31,6 +32,22 @@ type SignalConfig struct {
 	Cert     string
 	HTTPAddr string
 	GRPCAddr string
+	Auth     AuthConfig
+}
+
+//AuthConfig params for JWT token authentication
+type AuthConfig struct {
+	Enabled bool
+	Key     string
+	KeyType string
+}
+
+func (a AuthConfig) keyFunc(t *jwt.Token) (interface{}, error) {
+	switch a.KeyType {
+	//TODO: add more support for keytypes here
+	default:
+		return []byte(a.Key), nil
+	}
 }
 
 type CoordinatorConfig struct {
