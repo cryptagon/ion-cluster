@@ -13,6 +13,11 @@ grpcaddr = ":50051"
 key = ""
 cert = ""
 
+[signal.auth]
+enabled = true
+keytype = "HMAC"
+key = "1q2dGu5pzikcrECJgW3ADfXX3EsmoD99SYvSVCpDsJrAqxou5tUNbHPvkEFI4bTS"
+
 [sfu.router]
 # Limit the remb bandwidth in kbps
 # zero means no limits
