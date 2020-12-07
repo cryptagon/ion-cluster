@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	clientUrl string
+	clientURL string
 )
 
 var clientCmd = &cobra.Command{
@@ -26,7 +26,7 @@ var clientCmd = &cobra.Command{
 }
 
 func init() {
-	clientCmd.PersistentFlags().StringVarP(&clientUrl, "url", "u", "ws://localhost:7000/session/test", "config file (default is $HOME/.cobra.yaml)")
+	clientCmd.PersistentFlags().StringVarP(&clientURL, "url", "u", "ws://localhost:7000/session/test", "config file (default is $HOME/.cobra.yaml)")
 
 	rootCmd.AddCommand(clientCmd)
 }
@@ -47,9 +47,9 @@ func clientMain(cmd *cobra.Command, args []string) error {
 		log.Debugf("error initializing client %v", err)
 	}
 
-	fmt.Printf("client connecting to %v", clientUrl)
+	fmt.Printf("client connecting to %v", clientURL)
 
-	signalClosedCh, err := signal.Open(clientUrl)
+	signalClosedCh, err := signal.Open(clientURL)
 	if err != nil {
 		return err
 	}
