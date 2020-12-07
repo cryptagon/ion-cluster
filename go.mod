@@ -3,7 +3,7 @@ module github.com/pion/ion-cluster
 go 1.15
 
 //replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master-tandem
-replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201201223909-7198ca69ebf6
+replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201207210001-f4b409a7d0f8
 
 //replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 
@@ -27,6 +27,7 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
 	github.com/spf13/cobra v1.1.1 // indirect
 	github.com/spf13/viper v1.7.1
+	github.com/viant/toolbox v0.24.0
 	go.etcd.io/etcd v3.3.25+incompatible // indirect
 	google.golang.org/grpc v1.33.2
 	google.golang.org/grpc/examples v0.0.0-20201022203757-eb7fc22e4562 // indirect
