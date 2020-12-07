@@ -20,13 +20,13 @@ var (
 
 // Signal is the RPC Interface for ion-cluster
 type Signal interface {
-	Open(url string) (closed chan bool, err error)
+	Open(url string) (closed <-chan struct{}, err error)
 	Close() error
 
 	Join(sid string, offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error)
 	Offer(offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error)
-	Answer(answer *webrtc.SessionDescription)
-	Trickle(target int, trickle *webrtc.ICECandidateInit)
+	Answer(answer *webrtc.SessionDescription) error
+	Trickle(target int, trickle *webrtc.ICECandidateInit) error
 
 	OnNegotiate(func(offer *webrtc.SessionDescription))
 	OnTrickle(func(target int, trickle *webrtc.ICECandidateInit))
@@ -41,17 +41,25 @@ type JSONRPCSignalClient struct {
 	onTrickle   func(target int, trickle *webrtc.ICECandidateInit)
 }
 
+// NewJSONRPCSignalClient constructor
+func NewJSONRPCSignalClient(ctx context.Context) Signal {
+	return &JSONRPCSignalClient{context: ctx}
+}
+
 // Open connects to the given url
-func (c *JSONRPCSignalClient) Open(url string) error {
+func (c *JSONRPCSignalClient) Open(url string) (<-chan struct{}, error) {
 	conn, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	c.jc = jsonrpc2.NewConn(c.context, websocketjsonrpc2.NewObjectStream(conn), c)
-	// <-jc.DisconnectNotify()
+	return c.jc.DisconnectNotify(), nil
+}
 
-	return nil
+// Close disconnects the websocket
+func (c *JSONRPCSignalClient) Close() error {
+	return c.jc.Close()
 }
 
 // Join a session id with an sdp offer (returns an sdp answer or error)
@@ -98,13 +106,13 @@ func (c *JSONRPCSignalClient) Answer(answer *webrtc.SessionDescription) error {
 }
 
 // Trickle send ice candiates to the server
-func (c *JSONRPCSignalClient) Trickle(target int, trickle webrtc.ICECandidateInit) error {
+func (c *JSONRPCSignalClient) Trickle(target int, trickle *webrtc.ICECandidateInit) error {
 	if c.jc == nil {
 		return errNotConnected
 	}
 
 	log.Debugf("signal client sending trickle ice")
-	return c.jc.Notify(c.context, "trickle", &cluster.Trickle{Target: target, Candidate: trickle})
+	return c.jc.Notify(c.context, "trickle", &cluster.Trickle{Target: target, Candidate: *trickle})
 }
 
 // Handle handles incoming jsonrpc2 messages

@@ -17,15 +17,17 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c
 	github.com/lucsky/cuid v1.0.2 // indirect
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/ion-log v1.0.0
 	github.com/pion/ion-sfu v1.0.28
 	github.com/pion/sdp/v2 v2.4.0 // indirect
+	github.com/pion/webrtc/v2 v2.2.26
 	github.com/pion/webrtc/v3 v3.0.0-beta.12.0.20201115002753-64bbf7eea97d
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.8.0
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
-	github.com/spf13/cobra v1.1.1 // indirect
+	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
 	github.com/viant/toolbox v0.24.0
 	go.etcd.io/etcd v3.3.25+incompatible // indirect
