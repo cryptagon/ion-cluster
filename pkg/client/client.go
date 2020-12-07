@@ -13,6 +13,7 @@ const (
 
 type transport struct {
 	role       int
+	api        *webrtc.DataChannel
 	pc         *webrtc.PeerConnection
 	signal     Signal
 	candidates []*webrtc.ICECandidateInit
@@ -28,6 +29,13 @@ func newTransport(role int, signal Signal, cfg sfu.WebRTCTransportConfig) (*tran
 		return nil, err
 	}
 
+	t := &transport{
+		role:       role,
+		signal:     signal,
+		candidates: []*webrtc.ICECandidateInit{},
+		pc:         pc,
+	}
+
 	pc.OnICECandidate(func(candidate *webrtc.ICECandidate) {
 		if candidate != nil {
 			trickle := candidate.ToJSON()
@@ -36,16 +44,16 @@ func newTransport(role int, signal Signal, cfg sfu.WebRTCTransportConfig) (*tran
 	})
 
 	pc.OnDataChannel(func(channel *webrtc.DataChannel) {
-		log.Debugf("transport got datachannel: %v", channel.Label)
+		log.Debugf("transport got datachannel: %v", channel.Label())
 		//todo handle api / remoteStream
+		t.api = channel
 	})
 
-	return &transport{
-		role:       role,
-		signal:     signal,
-		candidates: []*webrtc.ICECandidateInit{},
-		pc:         pc,
-	}, nil
+	if role == rolePublish {
+		t.api, _ = pc.CreateDataChannel("ion-sfu", nil)
+	}
+
+	return t, nil
 }
 
 // Client for ion-cluster
