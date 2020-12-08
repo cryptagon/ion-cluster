@@ -98,6 +98,7 @@ func (s *Signal) ServeWebsocket() {
 		}
 		defer c.Close()
 
+		prometheusGaugeClients.Inc()
 		p := JSONSignal{
 			sync.Mutex{},
 			s.c,
@@ -107,6 +108,7 @@ func (s *Signal) ServeWebsocket() {
 
 		jc := jsonrpc2.NewConn(r.Context(), websocketjsonrpc2.NewObjectStream(c), &p)
 		<-jc.DisconnectNotify()
+		prometheusGaugeClients.Dec()
 	}))
 
 	r.Handle("/metrics", metricsHandler())

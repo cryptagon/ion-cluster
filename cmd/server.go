@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	cluster "github.com/pion/ion-cluster/pkg"
 	log "github.com/pion/ion-log"
@@ -57,9 +58,23 @@ func serverMain(cmd *cobra.Command, args []string) error {
 			log.Errorf("Error in wsServer: %v", err)
 			return err
 		case sig := <-sigs:
-			log.Debugf("got signal %v", sig)
-			//todo wait for all sessions to end
-			return err
+			log.Debugf("Got Signal %v, beginning shutdown", sig)
+			ticker := time.NewTicker(500 * time.Millisecond)
+			for {
+				active := cluster.MetricsGetActiveClientsCount()
+				if active == 0 {
+					log.Debugf("server idle, shutting down")
+					return nil
+				}
+				log.Debugf("shutdown waiting on %v clients", active)
+				select {
+				case <-ticker.C:
+					continue
+				case sig = <-sigs:
+					log.Debugf("Got second signal: forcing shutdown")
+					return nil
+				}
+			}
 		}
 	}
 }
