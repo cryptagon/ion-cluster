@@ -82,7 +82,6 @@ func NewClient(signal Signal, cfg sfu.WebRTCTransportConfig) (*Client, error) {
 		pub:    pub,
 		sub:    sub,
 	}, nil
-
 }
 
 //Join a session
@@ -126,8 +125,23 @@ func (c *Client) Join(sid string) error {
 	return nil
 }
 
+// Publish takes a producer and publishes its data to the peer connection
+func (c *Client) Publish(p producer) error {
+	if _, err := c.pub.pc.AddTrack(p.VideoTrack()); err != nil {
+		return err
+	}
+	if _, err := c.pub.pc.AddTrack(p.AudioTrack()); err != nil {
+		return err
+
+	}
+
+	go p.Start()
+	return nil
+}
+
 // Pub PC re-negotiation
 func (c *Client) pubNegotiationNeeded() {
+	log.Debugf("client pubOnNegotiationNeeded")
 	offer, err := c.pub.pc.CreateOffer(nil)
 	if err != nil {
 		log.Errorf("pub could not create pub offer: %v", err)
@@ -147,6 +161,8 @@ func (c *Client) pubNegotiationNeeded() {
 		log.Errorf("pub couldn't SetRemoteDescription %v", err)
 		return
 	}
+
+	log.Debugf("client negotiated")
 }
 
 // signalOnNegotiate is triggered from server for the sub pc

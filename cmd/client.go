@@ -59,6 +59,17 @@ func clientMain(cmd *cobra.Command, args []string) error {
 	}
 	c.Join("test")
 
+	if len(args) > 0 {
+
+		log.Debugf("starting producer for file: %v ", args[0])
+		producer := client.NewGSTProducer(c, args[0])
+		log.Debugf("publishing tracks")
+		if err := c.Publish(producer); err != nil {
+			log.Errorf("error publishing tracks: %v", err)
+			return err
+		}
+	}
+
 	for {
 		select {
 		case sig := <-sigs:
