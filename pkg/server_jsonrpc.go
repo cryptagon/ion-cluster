@@ -137,5 +137,9 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			replyError(err)
 		}
+
+	case "ping":
+		_ = conn.Reply(ctx, req.ID, "pong")
+		break
 	}
 }
