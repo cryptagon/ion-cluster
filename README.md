@@ -4,6 +4,23 @@ ION Cluster is a clusterable and horizontally scalable SFU build on [ion-sfu](ht
 
 It supports operating as a single node with no dependencies, or in clustered mode using etcd.
 
+## Dependencies
+#### OSX
+```
+brew install pkg-config gstreamer gst-plugins-base gst-plugins-good gst-plugins-bad gst-plugins-ugly
+# optionally
+brew install gst-libav
+```
+
+
+#### Ubuntu 
+
+```
+apt install -y pkg-config gstreamer1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly
+# optionally
+apt install -y gstreamer1.0-libav #supports more decoders for cli
+```
+
 ## Build
 ```
 ➜  ion-cluster git:(master) ✗ go build 
@@ -52,7 +69,7 @@ IonCluster can act as a client and publish streams to a remote cluster
 Connect to an ion-cluster server as a client
 
 Usage:
-  ion-cluster client [flags]
+  ion-cluster client [flags] <MEDIA FILE TO UPLOAD>
 
 Flags:
   -h, --help           help for client
