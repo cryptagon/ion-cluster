@@ -10,6 +10,7 @@ import "C"
 import (
 	"fmt"
 	"io"
+	"runtime"
 	"sync"
 	"unsafe"
 
@@ -31,13 +32,20 @@ type Pipeline struct {
 var pipeline = &Pipeline{}
 var pipelinesLock sync.Mutex
 
+func getEncoderString() string {
+	if runtime.GOOS == "darwin" {
+		return "vtenc_h264 realtime=true allow-frame-reordering=false max-keyframe-interval=60 ! h264parse config-interval=1"
+	}
+	return "x264enc bframes=0 speed-preset=veryfast key-int-max=60"
+}
+
 // CreatePipeline creates a GStreamer Pipeline
 func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) *Pipeline {
 	pipelineStr := fmt.Sprintf(`
 		filesrc location="%s" !
 		decodebin name=demux !
 			queue !
-			x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! 
+			%s ! 
 			video/x-h264,stream-format=byte-stream !
 			appsink name=video 
 		demux. ! 
@@ -46,7 +54,7 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) 
 			audioresample ! 
 			audio/x-raw,rate=48000,channels=2 !
 			opusenc ! appsink name=audio
-	`, containerPath)
+	`, containerPath, getEncoderString())
 
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
