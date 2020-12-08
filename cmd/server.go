@@ -18,7 +18,10 @@ var serverCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&conf.Signal.HTTPAddr, "addr", "a", ":7000", "http listen address")
+	serverCmd.PersistentFlags().StringVarP(&conf.Signal.HTTPAddr, "addr", "a", ":7000", "http listen address")
+	serverCmd.PersistentFlags().StringVar(&conf.Signal.Cert, "cert", "", "tls certificate")
+	serverCmd.PersistentFlags().StringVar(&conf.Signal.Key, "key", "", "tls priv key")
+
 	rootCmd.AddCommand(serverCmd)
 
 }
