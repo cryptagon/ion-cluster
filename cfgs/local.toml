@@ -14,7 +14,7 @@ key = ""
 cert = ""
 
 [signal.auth]
-enabled = true
+enabled = false 
 keytype = "HMAC"
 key = "1q2dGu5pzikcrECJgW3ADfXX3EsmoD99SYvSVCpDsJrAqxou5tUNbHPvkEFI4bTS"
 
@@ -37,7 +37,7 @@ enabletemporallayer = false
 # Format: [min, max]   and max - min >= 100
 # portrange = [50000, 60000]
 # if sfu behind nat, set iceserver
-# [[webrtc.iceserver]]
+[[webrtc.iceserver]]
 urls = ["stun:stun.stunprotocol.org:3478"]
 # [[webrtc.iceserver]]
 # urls = ["turn:turn.awsome.org:3478"]
