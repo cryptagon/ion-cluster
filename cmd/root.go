@@ -28,7 +28,7 @@ var (
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cobra.yaml)")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.cobra.yaml)")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
 
@@ -57,7 +57,7 @@ func bindConfigEnvs(iface interface{}, parts ...string) {
 		case reflect.Struct:
 			bindConfigEnvs(v.Interface(), append(parts, name)...)
 		default:
-			log.Debugf("BINDENV: %v", strings.Join(append(parts, name), "."))
+			log.Tracef("BINDENV: %v", strings.Join(append(parts, name), "."))
 			viper.BindEnv(strings.Join(append(parts, name), "."))
 		}
 	}
@@ -105,6 +105,4 @@ func initConfig() {
 	// 	log.Errorf("config file %s loaded failed. range port must be [min, max] and max - min >= %d\n", file, portRangeLimit)
 	// 	os.Exit(1)
 	// }
-
-	log.Debugf("got config: %#v", conf)
 }

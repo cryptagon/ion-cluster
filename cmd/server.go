@@ -18,7 +18,9 @@ var serverCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.PersistentFlags().StringVarP(&conf.Signal.HTTPAddr, "addr", "a", ":7000", "http listen address")
 	rootCmd.AddCommand(serverCmd)
+
 }
 
 func serverMain(cmd *cobra.Command, args []string) error {

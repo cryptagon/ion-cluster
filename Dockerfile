@@ -23,12 +23,13 @@ COPY go.mod go.sum ./
 RUN cd $GOPATH/src/github.com/pion/ion-cluster && go mod download
 
 COPY . $GOPATH/src/github.com/pion/ion-cluster
-RUN GOOS=linux go build -o /ion .
+RUN GOOS=linux go build -o /ion-cluster .
 
 FROM base 
 RUN apk --no-cache add ca-certificates
-COPY --from=build /ion /usr/local/bin/ion
+COPY --from=build /ion-cluster /usr/local/bin/ion-cluster
 
 # COPY config.toml /configs/sfu.toml
 
-CMD [ "/usr/local/bin/ion", "-c", "/configs/sfu.toml", "server"]
+ENTRYPOINT ["/usr/local/bin/ion-cluster"]
+CMD ["-c", "/configs/sfu.toml", "server"]

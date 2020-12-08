@@ -22,11 +22,11 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    command: ["-c", "/configs/sfu.toml", "-a", ":7000"]
+    command: ["server", "-c", "/configs/sfu.toml", "-a", ":7000"]
     volumes:
       - "./cfgs/config-docker.toml:/configs/sfu.toml"
     environment:
-      ION_CLUSTER_HOST: sfuA
+      ION_SIGNAL_FQDN: sfuA
     ports:
       - "5000-5100:5000-5100/udp"
       - "7000:7000"
@@ -39,11 +39,11 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    command: ["-c", "/configs/sfu.toml", "-a", ":7001"]
+    command: ["server", "-c", "/configs/sfu.toml", "-a", ":7001"]
     volumes:
       - "./cfgs/config-docker.toml:/configs/sfu.toml"
     environment:
-      ION_CLUSTER_HOST: sfuB
+      ION_SIGNAL_FQDN: sfuB
     ports:
       - "5200-5300:5200-5300/udp"
       - "7001:7001"
