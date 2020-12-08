@@ -33,7 +33,7 @@ var pipelinesLock sync.Mutex
 
 // CreatePipeline creates a GStreamer Pipeline
 func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) *Pipeline {
-	pipelineStr := fmt.Sprintf("filesrc location=\"%s\" ! decodebin name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! opusenc ! appsink name=audio", containerPath)
+	pipelineStr := fmt.Sprintf("filesrc location=\"%s\" ! decodebin name=demux ! queue ! x264enc bframes=0 speed-preset=veryfast key-int-max=60 ! video/x-h264,stream-format=byte-stream ! appsink name=video demux. ! queue ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! opusenc ! appsink name=audio", containerPath)
 
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))

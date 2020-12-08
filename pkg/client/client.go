@@ -168,7 +168,7 @@ func (c *Client) pubNegotiationNeeded() {
 // signalOnNegotiate is triggered from server for the sub pc
 func (c *Client) signalOnNegotiate(desc *webrtc.SessionDescription) {
 	if err := c.sub.pc.SetRemoteDescription(*desc); err != nil {
-		log.Errorf("sub couldn't SetRemoteDescription")
+		log.Errorf("sub couldn't SetRemoteDescription: %v", err)
 		return
 	}
 

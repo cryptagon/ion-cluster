@@ -120,8 +120,7 @@ func (c *JSONRPCSignalClient) Handle(ctx context.Context, conn *jsonrpc2.Conn, r
 	switch req.Method {
 	case "offer":
 		log.Debugf("signal client got offer")
-
-		var offer cluster.Negotiation
+		var offer webrtc.SessionDescription
 		err := json.Unmarshal(*req.Params, &offer)
 		if err != nil {
 			log.Errorf("error parsing offer from server")
@@ -129,7 +128,7 @@ func (c *JSONRPCSignalClient) Handle(ctx context.Context, conn *jsonrpc2.Conn, r
 		}
 
 		if c.onNegotiate != nil {
-			c.onNegotiate(&offer.Desc)
+			c.onNegotiate(&offer)
 		}
 
 	case "trickle":
@@ -148,10 +147,12 @@ func (c *JSONRPCSignalClient) Handle(ctx context.Context, conn *jsonrpc2.Conn, r
 	}
 }
 
+//OnNegotiate hook a negotiation handler
 func (c *JSONRPCSignalClient) OnNegotiate(cb func(offer *webrtc.SessionDescription)) {
 	c.onNegotiate = cb
 }
 
+//OnTrickle hook a trickle handler
 func (c *JSONRPCSignalClient) OnTrickle(cb func(target int, trickle *webrtc.ICECandidateInit)) {
 	c.onTrickle = cb
 }

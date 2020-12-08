@@ -17,6 +17,7 @@ import (
 
 var (
 	clientURL string
+	clientSID string
 )
 
 var clientCmd = &cobra.Command{
@@ -26,9 +27,14 @@ var clientCmd = &cobra.Command{
 }
 
 func init() {
-	clientCmd.PersistentFlags().StringVarP(&clientURL, "url", "u", "ws://localhost:7000/session/test", "config file (default is $HOME/.cobra.yaml)")
+	clientCmd.PersistentFlags().StringVarP(&clientURL, "url", "u", "ws://localhost:7000", "config file (default is $HOME/.cobra.yaml)")
+	clientCmd.PersistentFlags().StringVarP(&clientSID, "sid", "s", "test-session", "config file (default is $HOME/.cobra.yaml)")
 
 	rootCmd.AddCommand(clientCmd)
+}
+
+func endpoint(host string, session string) string {
+	return fmt.Sprintf("%s/session/%s", host, session)
 }
 
 func clientMain(cmd *cobra.Command, args []string) error {
@@ -47,9 +53,10 @@ func clientMain(cmd *cobra.Command, args []string) error {
 		log.Debugf("error initializing client %v", err)
 	}
 
-	fmt.Printf("client connecting to %v", clientURL)
+	endpoint := endpoint(clientURL, clientSID)
+	fmt.Printf("client connecting to %v", endpoint)
 
-	signalClosedCh, err := signal.Open(clientURL)
+	signalClosedCh, err := signal.Open(endpoint)
 	if err != nil {
 		return err
 	}
@@ -57,7 +64,7 @@ func clientMain(cmd *cobra.Command, args []string) error {
 	c.OnTrack = func(t *webrtc.Track, r *webrtc.RTPReceiver) {
 		log.Debugf("Client got track!!!!")
 	}
-	c.Join("test")
+	c.Join(clientSID)
 
 	if len(args) > 0 {
 

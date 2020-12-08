@@ -47,18 +47,22 @@ func NewGSTProducer(c *Client, path string) *GSTProducer {
 	}
 }
 
+//AudioTrack returns the audio track for the pipeline
 func (t *GSTProducer) AudioTrack() *webrtc.Track {
 	return t.audioTrack
 }
 
+//VideoTrack returns the video track for the pipeline
 func (t *GSTProducer) VideoTrack() *webrtc.Track {
 	return t.videoTrack
 }
 
+//SeekP to a timestamp
 func (t *GSTProducer) SeekP(ts int) {
 	t.pipeline.SeekToTime(int64(ts))
 }
 
+//Pause the pipeline
 func (t *GSTProducer) Pause(pause bool) {
 	if pause {
 		t.pipeline.Pause()
@@ -67,13 +71,11 @@ func (t *GSTProducer) Pause(pause bool) {
 	}
 }
 
+//Stop the pipeline
 func (t *GSTProducer) Stop() {
 }
 
+//Start the pipeline
 func (t *GSTProducer) Start() {
 	t.pipeline.Start()
-}
-
-func (t *GSTProducer) VideoCodec() string {
-	return webrtc.H264
 }
