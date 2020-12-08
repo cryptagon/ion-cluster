@@ -16,8 +16,9 @@ import (
 )
 
 var (
-	clientURL string
-	clientSID string
+	clientURL   string
+	clientSID   string
+	clientToken string
 )
 
 var clientCmd = &cobra.Command{
@@ -27,14 +28,20 @@ var clientCmd = &cobra.Command{
 }
 
 func init() {
-	clientCmd.PersistentFlags().StringVarP(&clientURL, "url", "u", "ws://localhost:7000", "config file (default is $HOME/.cobra.yaml)")
-	clientCmd.PersistentFlags().StringVarP(&clientSID, "sid", "s", "test-session", "config file (default is $HOME/.cobra.yaml)")
+	clientCmd.PersistentFlags().StringVarP(&clientURL, "url", "u", "ws://localhost:7000", "sfu host to connect to")
+	clientCmd.PersistentFlags().StringVarP(&clientSID, "sid", "s", "test-session", "session id to join")
+	clientCmd.PersistentFlags().StringVarP(&clientToken, "token", "t", "", "jwt access token")
 
 	rootCmd.AddCommand(clientCmd)
 }
 
-func endpoint(host string, session string) string {
-	return fmt.Sprintf("%s/session/%s", host, session)
+func endpoint() string {
+	url := fmt.Sprintf("%s/session/%s", clientURL, clientSID)
+	if clientToken != "" {
+		url += fmt.Sprintf("?access_token=%s", clientToken)
+	}
+
+	return url
 }
 
 func clientMain(cmd *cobra.Command, args []string) error {
@@ -53,10 +60,9 @@ func clientMain(cmd *cobra.Command, args []string) error {
 		log.Debugf("error initializing client %v", err)
 	}
 
-	endpoint := endpoint(clientURL, clientSID)
-	fmt.Printf("client connecting to %v", endpoint)
+	fmt.Printf("client connecting to %v", endpoint())
 
-	signalClosedCh, err := signal.Open(endpoint)
+	signalClosedCh, err := signal.Open(endpoint())
 	if err != nil {
 		return err
 	}
