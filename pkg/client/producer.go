@@ -1,9 +1,11 @@
 package client
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 
+	"github.com/lucsky/cuid"
 	"github.com/pion/ion-cluster/pkg/client/gst"
 	"github.com/pion/webrtc/v3"
 )
@@ -28,12 +30,13 @@ type GSTProducer struct {
 
 // NewGSTProducer will create a new producer for a given client and a videoFile
 func NewGSTProducer(c *Client, path string) *GSTProducer {
-	videoTrack, err := c.pub.pc.NewTrack(webrtc.DefaultPayloadTypeH264, rand.Uint32(), "synced-video", "synced-video")
+	stream := fmt.Sprintf("gst-video-%v", cuid.New())
+	videoTrack, err := c.pub.pc.NewTrack(webrtc.DefaultPayloadTypeH264, rand.Uint32(), cuid.New(), stream)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	audioTrack, err := c.pub.pc.NewTrack(webrtc.DefaultPayloadTypeOpus, rand.Uint32(), "synced-audio", "synced-video")
+	audioTrack, err := c.pub.pc.NewTrack(webrtc.DefaultPayloadTypeOpus, rand.Uint32(), cuid.New(), stream)
 	if err != nil {
 		log.Fatal(err)
 	}
