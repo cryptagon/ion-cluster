@@ -31,10 +31,6 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.cobra.yaml)")
 	rootCmd.PersistentFlags().Bool("viper", true, "use Viper for configuration")
 	viper.BindPFlag("useViper", rootCmd.PersistentFlags().Lookup("viper"))
-
-	fixByFile := []string{"asm_amd64.s", "proc.go", "icegatherer.go"}
-	fixByFunc := []string{}
-	log.Init(conf.SFU.Log.Level, fixByFile, fixByFunc)
 }
 
 // Execute executes the root command.
@@ -105,4 +101,8 @@ func initConfig() {
 	// 	log.Errorf("config file %s loaded failed. range port must be [min, max] and max - min >= %d\n", file, portRangeLimit)
 	// 	os.Exit(1)
 	// }
+
+	fixByFile := []string{"asm_amd64.s", "proc.go", "icegatherer.go"}
+	fixByFunc := []string{}
+	log.Init(conf.SFU.Log.Level, fixByFile, fixByFunc)
 }
