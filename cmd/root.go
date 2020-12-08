@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
 
 	"github.com/mitchellh/go-homedir"
 	cluster "github.com/pion/ion-cluster/pkg"
@@ -40,6 +42,27 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
+func bindConfigEnvs(iface interface{}, parts ...string) {
+	ifv := reflect.ValueOf(iface)
+	ift := reflect.TypeOf(iface)
+	for i := 0; i < ift.NumField(); i++ {
+		v := ifv.Field(i)
+		t := ift.Field(i)
+		name := strings.ToLower(t.Name)
+		tv, ok := t.Tag.Lookup("mapstructure")
+		if ok {
+			name = tv
+		}
+		switch v.Kind() {
+		case reflect.Struct:
+			bindConfigEnvs(v.Interface(), append(parts, name)...)
+		default:
+			log.Debugf("BINDENV: %v", strings.Join(append(parts, name), "."))
+			viper.BindEnv(strings.Join(append(parts, name), "."))
+		}
+	}
+}
+
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -57,11 +80,14 @@ func initConfig() {
 		viper.AddConfigPath(home)
 		viper.SetConfigName(".ioncluster")
 	}
-	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
 	}
+
+	viper.SetEnvPrefix("ION")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	bindConfigEnvs(conf)
 
 	err := viper.GetViper().Unmarshal(&conf)
 	if err != nil {
@@ -80,7 +106,5 @@ func initConfig() {
 	// 	os.Exit(1)
 	// }
 
-	// if host := os.Getenv("ION_CLUSTER_HOST"); host != "" {
-	// 	conf.Signal.FQDN = host
-	// }
+	log.Debugf("got config: %#v", conf)
 }

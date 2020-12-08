@@ -50,6 +50,7 @@ func (a AuthConfig) keyFunc(t *jwt.Token) (interface{}, error) {
 	}
 }
 
+//CoordinatorConfig params for which coordinator to use
 type CoordinatorConfig struct {
 	Local *struct {
 		Enabled bool
