@@ -1,24 +1,34 @@
-FROM golang:1.14.9-stretch
+FROM golang:1.14-alpine as base 
 
 ENV GO111MODULE=on
 
 WORKDIR $GOPATH/src/github.com/pion/ion-cluster
 
+RUN apk add \
+    gstreamer \
+    gstreamer-dev \
+    gst-plugins-base \
+    gst-plugins-base-dev \
+    gst-plugins-good \
+    gst-plugins-bad \
+    gst-plugins-ugly
+
+FROM base as build
+
+RUN apk add \
+    build-base \
+    pkgconfig
+
 COPY go.mod go.sum ./
 RUN cd $GOPATH/src/github.com/pion/ion-cluster && go mod download
 
-COPY pkg/ $GOPATH/src/github.com/pion/ion-cluster/pkg
-COPY cmd/ $GOPATH/src/github.com/pion/ion-cluster/cmd
+COPY . $GOPATH/src/github.com/pion/ion-cluster
+RUN GOOS=linux go build -o /ion .
 
-WORKDIR $GOPATH/src/github.com/pion/ion-cluster/cmd
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /sfu .
-
-FROM alpine:3.12.0
-
+FROM base 
 RUN apk --no-cache add ca-certificates
-COPY --from=0 /sfu /usr/local/bin/sfu
+COPY --from=build /ion /usr/local/bin/ion
 
 # COPY config.toml /configs/sfu.toml
 
-ENTRYPOINT ["/usr/local/bin/sfu"]
-CMD ["-c", "/configs/sfu.toml"]
+CMD [ "/usr/local/bin/ion", "-c", "/configs/sfu.toml", "server"]

@@ -21,7 +21,6 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/ion-log v1.0.0
 	github.com/pion/ion-sfu v1.0.28
-	github.com/pion/sdp/v2 v2.4.0 // indirect
 	github.com/pion/webrtc/v2 v2.2.26
 	github.com/pion/webrtc/v3 v3.0.0-beta.12.0.20201115002753-64bbf7eea97d
 	github.com/pkg/errors v0.9.1
@@ -33,6 +32,5 @@ require (
 	go.etcd.io/etcd v3.3.25+incompatible // indirect
 	google.golang.org/grpc v1.33.2
 	google.golang.org/grpc/examples v0.0.0-20201022203757-eb7fc22e4562 // indirect
-	gopkg.in/ini.v1 v1.51.1 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )
