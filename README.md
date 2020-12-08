@@ -56,8 +56,8 @@ Use "ion-cluster [command] --help" for more information about a command.
 ```
 docker-compose up -d etcd
 
-./ion-cluster server -c config.toml       # Listens on :7000 
-./ion-cluster server -c config2.toml      # Listens on :7001
+./ion-cluster server -c cfgs/config.toml       # Listens on :7000 
+./ion-cluster server -c cfgs/config2.toml      # Listens on :7001
 ```
 
 
