@@ -92,6 +92,13 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				log.Errorf("error sending ice candidate %s", err)
 			}
 		}
+		p.OnICEConnectionStateChange = func(s webrtc.ICEConnectionState) {
+			if s == webrtc.ICEConnectionStateFailed {
+				log.Infof("peer ice disconnected, closing socket")
+				conn.Close()
+			}
+		}
+
 		_ = conn.Reply(ctx, req.ID, answer)
 
 	case "offer":
