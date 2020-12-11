@@ -29,8 +29,8 @@ type GSTProducer struct {
 }
 
 // NewGSTProducer will create a new producer for a given client and a videoFile
-func NewGSTProducer(c *Client, path string) *GSTProducer {
-	stream := fmt.Sprintf("gst-video-%v", cuid.New())
+func NewGSTProducer(c *Client, kind string, path string) *GSTProducer {
+	stream := fmt.Sprintf("gst-%v-%v", kind, cuid.New())
 	videoTrack, err := c.pub.pc.NewTrack(webrtc.DefaultPayloadTypeH264, rand.Uint32(), cuid.New(), stream)
 	if err != nil {
 		log.Fatal(err)

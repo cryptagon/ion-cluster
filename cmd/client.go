@@ -76,9 +76,9 @@ func clientMain(cmd *cobra.Command, args []string) error {
 
 	var producer *client.GSTProducer
 	if len(args) > 0 {
-		producer = client.NewGSTProducer(c, args[0])
+		producer = client.NewGSTProducer(c, "screen", args[0])
 	} else {
-		producer = client.NewGSTProducer(c, "")
+		producer = client.NewGSTProducer(c, "video", "")
 	}
 
 	log.Debugf("publishing tracks")
