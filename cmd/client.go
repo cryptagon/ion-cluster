@@ -70,7 +70,10 @@ func clientMain(cmd *cobra.Command, args []string) error {
 	c.OnTrack = func(t *webrtc.Track, r *webrtc.RTPReceiver) {
 		log.Debugf("Client got track!!!!")
 	}
-	c.Join(clientSID)
+
+	if err := c.Join(clientSID); err != nil {
+		return err
+	}
 
 	log.Debugf("starting producer")
 
