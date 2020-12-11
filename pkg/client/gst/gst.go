@@ -36,7 +36,7 @@ func getEncoderString() string {
 	if runtime.GOOS == "darwin" {
 		return "vtenc_h264 realtime=true allow-frame-reordering=false max-keyframe-interval=60 ! h264parse config-interval=1"
 	}
-	return "x264enc bframes=0 speed-preset=veryfast key-int-max=60"
+	return "x264enc bframes=0 speed-preset=ultrafast key-int-max=60 ! h264parse config-interval=1"
 }
 
 // CreatePipeline creates a GStreamer Pipeline
@@ -46,7 +46,7 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) 
 		decodebin name=demux !
 			queue !
 			%s ! 
-			video/x-h264,stream-format=byte-stream !
+			video/x-h264,stream-format=byte-stream,profile=baseline !
 			appsink name=video 
 		demux. ! 
 			queue ! 
@@ -73,10 +73,10 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) 
 func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.Track) *Pipeline {
 	pipelineStr := fmt.Sprintf(`
 		videotestsrc ! 
-			video/x-raw,width=1280,height=720
+			video/x-raw,width=1280,height=720 !
 			queue !
 			%s ! 
-			video/x-h264,stream-format=byte-stream !
+			video/x-h264,stream-format=byte-stream,profile=baseline !
 			appsink name=video 
 		audiotestsrc wave=6 ! 
 			queue ! 
