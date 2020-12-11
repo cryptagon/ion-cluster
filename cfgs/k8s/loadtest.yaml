@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: ion-cluster-loadtest 
+  labels:
+    app: ion-cluster-loadtest
+spec:
+  # modify replicas according to your case
+  replicas: 4 
+  selector:
+    matchLabels:
+      app: ion-cluster-loadtest
+  template:
+    metadata:
+      labels:
+        app: ion-cluster-loadtest 
+    spec:
+      containers:
+      - name: ion-cluster 
+        image: gcr.io/tandem-276521/ion-cluster:latest
+        command:  [
+          "ion-cluster",
+          "client",
+          "-u",
+          "$HOST",
+          "-s",
+          "$SESSION_ID",
+          "-t",
+          "$TOKEN",
+        ]
