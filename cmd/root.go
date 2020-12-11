@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/go-homedir"
 	cluster "github.com/pion/ion-cluster/pkg"
@@ -35,6 +37,7 @@ func init() {
 
 // Execute executes the root command.
 func Execute() error {
+	rand.Seed(time.Now().UTC().UnixNano())
 	return rootCmd.Execute()
 }
 

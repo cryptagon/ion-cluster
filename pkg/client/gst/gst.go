@@ -69,6 +69,36 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) 
 	return pipeline
 }
 
+// CreateTestSrcPipeline creates a GStreamer Pipeline with test sources
+func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.Track) *Pipeline {
+	pipelineStr := fmt.Sprintf(`
+		videotestsrc ! 
+			video/x-raw,width=1280,height=720
+			queue !
+			%s ! 
+			video/x-h264,stream-format=byte-stream !
+			appsink name=video 
+		audiotestsrc wave=6 ! 
+			queue ! 
+			audioconvert ! 
+			audioresample ! 
+			audio/x-raw,rate=48000,channels=2 !
+			opusenc ! appsink name=audio
+	`, getEncoderString())
+
+	pipelineStrUnsafe := C.CString(pipelineStr)
+	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
+
+	pipelinesLock.Lock()
+	defer pipelinesLock.Unlock()
+	pipeline = &Pipeline{
+		Pipeline:   C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
+		audioTrack: audioTrack,
+		videoTrack: videoTrack,
+	}
+	return pipeline
+}
+
 // Start starts the GStreamer Pipeline
 func (p *Pipeline) Start() {
 	// This will signal to goHandlePipelineBuffer
