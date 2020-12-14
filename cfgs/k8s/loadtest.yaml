@@ -18,6 +18,7 @@ spec:
       containers:
       - name: ion-cluster 
         image: gcr.io/tandem-276521/ion-cluster:latest
+        imagePullPolicy: Always
         command:  [
           "ion-cluster",
           "client",
