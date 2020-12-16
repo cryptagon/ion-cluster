@@ -93,8 +93,9 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 		p.OnICEConnectionStateChange = func(s webrtc.ICEConnectionState) {
-			if s == webrtc.ICEConnectionStateFailed {
-				log.Infof("peer ice disconnected, closing socket")
+			if s == webrtc.ICEConnectionStateFailed || s == webrtc.ICEConnectionStateClosed {
+				log.Infof("peer ice failed/closed, closing peer and websocket")
+				p.Close()
 				conn.Close()
 			}
 		}
