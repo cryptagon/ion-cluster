@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	sfu "github.com/pion/ion-sfu/pkg"
+	"github.com/pion/ion-sfu/pkg/sfu"
 	"github.com/pion/webrtc/v3"
 
 	"github.com/pion/ion-cluster/pkg/client"

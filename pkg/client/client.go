@@ -2,7 +2,7 @@ package client
 
 import (
 	log "github.com/pion/ion-log"
-	sfu "github.com/pion/ion-sfu/pkg"
+	"github.com/pion/ion-sfu/pkg/sfu"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -23,7 +23,7 @@ func newTransport(role int, signal Signal, cfg sfu.WebRTCTransportConfig) (*tran
 	me := webrtc.MediaEngine{}
 	me.RegisterDefaultCodecs()
 
-	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(cfg.Setting))
+	api := webrtc.NewAPI(webrtc.WithMediaEngine(&me), webrtc.WithSettingEngine(cfg.Setting))
 	pc, err := api.NewPeerConnection(cfg.Configuration)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ type Client struct {
 	pub *transport
 	sub *transport
 
-	OnTrack func(*webrtc.Track, *webrtc.RTPReceiver)
+	OnTrack func(*webrtc.TrackRemote, *webrtc.RTPReceiver)
 }
 
 //NewClient returns a new jsonrpc2 client that manages a pub and sub peerConnection
@@ -89,8 +89,8 @@ func (c *Client) Join(sid string) error {
 	c.signal.OnNegotiate(c.signalOnNegotiate)
 	c.signal.OnTrickle(c.signalOnTrickle)
 
-	c.sub.pc.OnTrack(func(track *webrtc.Track, recv *webrtc.RTPReceiver) {
-		log.Debugf("client sub got remote stream %v track %v", track.Msid(), track.Label())
+	c.sub.pc.OnTrack(func(track *webrtc.TrackRemote, recv *webrtc.RTPReceiver) {
+		log.Debugf("client sub got remote stream %v track %v", track.Msid(), track.ID())
 		if c.OnTrack != nil {
 			c.OnTrack(track, recv)
 		}
