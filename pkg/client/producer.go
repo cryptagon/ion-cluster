@@ -2,7 +2,6 @@ package client
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/lucsky/cuid"
 	"github.com/pion/ion-cluster/pkg/client/gst"
@@ -30,14 +29,14 @@ type GSTProducer struct {
 // NewGSTProducer will create a new producer for a given client and a videoFile
 func NewGSTProducer(c *Client, kind string, path string) *GSTProducer {
 	stream := fmt.Sprintf("gst-%v-%v", kind, cuid.New())
-	videoTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "video/h264"}, cuid.New(), stream)
+	videoTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "video/h264", ClockRate: 90000}, cuid.New(), stream)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	audioTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "audio/opus"}, cuid.New(), stream)
+	audioTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "audio/opus", ClockRate: 48000}, cuid.New(), stream)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	var pipeline *gst.Pipeline

@@ -140,6 +140,7 @@ func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.i
 	}
 
 	goDuration := time.Duration(duration)
+	// log.Debugf("writing buffer: duration=%v", duration)
 
 	if err := track.WriteSample(media.Sample{Data: C.GoBytes(buffer, bufferLen), Duration: goDuration}); err != nil && err != io.ErrClosedPipe {
 		panic(err)
