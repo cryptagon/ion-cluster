@@ -153,7 +153,7 @@ func (c *Client) Publish(p producer) error {
 		rtcpBuf := make([]byte, 1500)
 		for {
 			if _, rtcpErr := audioSender.Read(rtcpBuf); rtcpErr != nil {
-				log.Errorf("audioSender23k23k23k rtcp error: %v", err)
+				log.Errorf("audioSender rtcp error: %v", err)
 				return
 			}
 		}
