@@ -2,7 +2,6 @@ package client
 
 import (
 	log "github.com/pion/ion-log"
-	"github.com/pion/ion-sfu/pkg/sfu"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -20,8 +19,7 @@ type transport struct {
 }
 
 func newTransport(role int, signal Signal, cfg *webrtc.Configuration) (*transport, error) {
-	me := sfu.GetDefaultMediaEngine()
-
+	me, _ := getProducerMediaEngine()
 	se := webrtc.SettingEngine{}
 
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(se))
@@ -142,7 +140,7 @@ func (c *Client) Publish(p producer) error {
 	go func() {
 		rtcpBuf := make([]byte, 1500)
 		for {
-			if _, rtcpErr := videoSender.Read(rtcpBuf); rtcpErr != nil {
+			if _, _, rtcpErr := videoSender.Read(rtcpBuf); rtcpErr != nil {
 				log.Errorf("videoSender rtcp error: %v", err)
 				return
 			}
@@ -152,7 +150,7 @@ func (c *Client) Publish(p producer) error {
 	go func() {
 		rtcpBuf := make([]byte, 1500)
 		for {
-			if _, rtcpErr := audioSender.Read(rtcpBuf); rtcpErr != nil {
+			if _, _, rtcpErr := audioSender.Read(rtcpBuf); rtcpErr != nil {
 				log.Errorf("audioSender rtcp error: %v", err)
 				return
 			}

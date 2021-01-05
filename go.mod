@@ -5,7 +5,7 @@ go 1.15
 //replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master-tandem
 // replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201216181931-d34903e6e72e
 
-replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
+// replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
@@ -21,14 +21,15 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/ion-log v1.0.0
-	github.com/pion/ion-sfu v1.0.28
+	github.com/pion/ion-sfu v1.7.3
 	github.com/pion/quic v0.1.4 // indirect
+	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
-	github.com/pion/webrtc/v3 v3.0.0-beta.15.0.20201209023348-63401a8837fb
+	github.com/pion/webrtc/v3 v3.0.3
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.8.0
+	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
-	github.com/prometheus/common v0.14.0
+	github.com/prometheus/common v0.15.0
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20200429184054-15c2290dcb37
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
