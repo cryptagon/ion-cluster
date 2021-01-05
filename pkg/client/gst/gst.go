@@ -12,6 +12,7 @@ import (
 	"io"
 	"runtime"
 	"sync"
+	"time"
 	"unsafe"
 
 	"github.com/pion/webrtc/v3"
@@ -25,8 +26,8 @@ func init() {
 // Pipeline is a wrapper for a GStreamer Pipeline
 type Pipeline struct {
 	Pipeline   *C.GstElement
-	audioTrack *webrtc.Track
-	videoTrack *webrtc.Track
+	audioTrack *webrtc.TrackLocalStaticSample
+	videoTrack *webrtc.TrackLocalStaticSample
 }
 
 var pipeline = &Pipeline{}
@@ -40,7 +41,7 @@ func getEncoderString() string {
 }
 
 // CreatePipeline creates a GStreamer Pipeline
-func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) *Pipeline {
+func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.TrackLocalStaticSample) *Pipeline {
 	pipelineStr := fmt.Sprintf(`
 		filesrc location="%s" !
 		decodebin name=demux !
@@ -70,7 +71,7 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.Track) 
 }
 
 // CreateTestSrcPipeline creates a GStreamer Pipeline with test sources
-func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.Track) *Pipeline {
+func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.TrackLocalStaticSample) *Pipeline {
 	pipelineStr := fmt.Sprintf(`
 		videotestsrc ! 
 			video/x-raw,width=1280,height=720 !
@@ -128,18 +129,20 @@ const (
 
 //export goHandlePipelineBuffer
 func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.int, isVideo C.int) {
-	var track *webrtc.Track
-	var samples uint32
+	var track *webrtc.TrackLocalStaticSample
 
 	if isVideo == 1 {
-		samples = uint32(videoClockRate * (float32(duration) / 1000000000))
+		// samples = uint32(videoClockRate * (float32(duration) / 1000000000))
 		track = pipeline.videoTrack
 	} else {
-		samples = uint32(audioClockRate * (float32(duration) / 1000000000))
+		// samples = uint32(audioClockRate * (float32(duration) / 1000000000))
 		track = pipeline.audioTrack
 	}
 
-	if err := track.WriteSample(media.Sample{Data: C.GoBytes(buffer, bufferLen), Samples: samples}); err != nil && err != io.ErrClosedPipe {
+	goDuration := time.Duration(duration)
+	// log.Debugf("writing buffer: duration=%v", duration)
+
+	if err := track.WriteSample(media.Sample{Data: C.GoBytes(buffer, bufferLen), Duration: goDuration}); err != nil && err != io.ErrClosedPipe {
 		panic(err)
 	}
 

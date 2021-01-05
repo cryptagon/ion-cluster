@@ -7,7 +7,7 @@ import (
 
 	"github.com/pborman/uuid"
 	log "github.com/pion/ion-log"
-	sfu "github.com/pion/ion-sfu/pkg"
+	"github.com/pion/ion-sfu/pkg/sfu"
 )
 
 var (
@@ -25,7 +25,7 @@ type sessionMeta struct {
 // and providing rpc connections to other nodes
 type coordinator interface {
 	getOrCreateSession(sessionID string) (*sessionMeta, error)
-	sfu.TransportProvider
+	sfu.SessionProvider
 }
 
 // NewCoordinator configures coordinator for this node
@@ -75,21 +75,9 @@ func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
 	c.sessions[sessionID] = s
 	return s
 }
-func (c *localCoordinator) NewTransport(sid, pid string, me sfu.MediaEngine) (*sfu.Session, *sfu.Publisher, *sfu.Subscriber, error) {
-	session := c.ensureSession(sid)
 
-	sub, err := sfu.NewSubscriber(session, pid, me, c.w)
-
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	pub, err := sfu.NewPublisher(session, pid, me, c.w)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return session, pub, sub, nil
+func (c *localCoordinator) GetSession(sid string) (*sfu.Session, sfu.WebRTCTransportConfig) {
+	return c.ensureSession(sid), c.w
 }
 
 func (c *localCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, error) {

@@ -2,8 +2,6 @@ package client
 
 import (
 	"fmt"
-	"log"
-	"math/rand"
 
 	"github.com/lucsky/cuid"
 	"github.com/pion/ion-cluster/pkg/client/gst"
@@ -15,15 +13,15 @@ type producer interface {
 	Start()
 	Stop()
 
-	AudioTrack() *webrtc.Track
-	VideoTrack() *webrtc.Track
+	AudioTrack() *webrtc.TrackLocalStaticSample
+	VideoTrack() *webrtc.TrackLocalStaticSample
 }
 
 // GSTProducer will produce audio + video from a gstreamer pipeline and can be published to a client
 type GSTProducer struct {
 	name       string
-	audioTrack *webrtc.Track
-	videoTrack *webrtc.Track
+	audioTrack *webrtc.TrackLocalStaticSample
+	videoTrack *webrtc.TrackLocalStaticSample
 	pipeline   *gst.Pipeline
 	paused     bool
 }
@@ -31,14 +29,14 @@ type GSTProducer struct {
 // NewGSTProducer will create a new producer for a given client and a videoFile
 func NewGSTProducer(c *Client, kind string, path string) *GSTProducer {
 	stream := fmt.Sprintf("gst-%v-%v", kind, cuid.New())
-	videoTrack, err := c.pub.pc.NewTrack(webrtc.DefaultPayloadTypeH264, rand.Uint32(), cuid.New(), stream)
+	videoTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "video/h264", ClockRate: 90000}, cuid.New(), stream)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
-	audioTrack, err := c.pub.pc.NewTrack(webrtc.DefaultPayloadTypeOpus, rand.Uint32(), cuid.New(), stream)
+	audioTrack, err := webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{MimeType: "audio/opus", ClockRate: 48000}, cuid.New(), stream)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	var pipeline *gst.Pipeline
@@ -56,12 +54,12 @@ func NewGSTProducer(c *Client, kind string, path string) *GSTProducer {
 }
 
 //AudioTrack returns the audio track for the pipeline
-func (t *GSTProducer) AudioTrack() *webrtc.Track {
+func (t *GSTProducer) AudioTrack() *webrtc.TrackLocalStaticSample {
 	return t.audioTrack
 }
 
 //VideoTrack returns the video track for the pipeline
-func (t *GSTProducer) VideoTrack() *webrtc.Track {
+func (t *GSTProducer) VideoTrack() *webrtc.TrackLocalStaticSample {
 	return t.videoTrack
 }
 

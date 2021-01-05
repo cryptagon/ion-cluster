@@ -9,7 +9,7 @@ import (
 
 	"github.com/pborman/uuid"
 	log "github.com/pion/ion-log"
-	sfu "github.com/pion/ion-sfu/pkg"
+	"github.com/pion/ion-sfu/pkg/sfu"
 	"google.golang.org/grpc"
 
 	"github.com/coreos/etcd/clientv3"
@@ -146,21 +146,8 @@ func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
 	return s
 }
 
-func (e *etcdCoordinator) NewTransport(sid, pid string, me sfu.MediaEngine) (*sfu.Session, *sfu.Publisher, *sfu.Subscriber, error) {
-	session := e.ensureSession(sid)
-
-	sub, err := sfu.NewSubscriber(session, pid, me, e.w)
-
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	pub, err := sfu.NewPublisher(session, pid, me, e.w)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-
-	return session, pub, sub, nil
+func (e *etcdCoordinator) GetSession(sid string) (*sfu.Session, sfu.WebRTCTransportConfig) {
+	return e.ensureSession(sid), e.w
 }
 
 func (e *etcdCoordinator) onSessionClosed(sessionID string) {

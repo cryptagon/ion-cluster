@@ -7,7 +7,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	sfu "github.com/pion/ion-sfu/pkg"
 	"github.com/pion/webrtc/v3"
 
 	"github.com/pion/ion-cluster/pkg/client"
@@ -46,7 +45,6 @@ func endpoint() string {
 
 func clientMain(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
-	w := sfu.NewWebRTCTransportConfig(conf.SFU)
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -54,8 +52,10 @@ func clientMain(cmd *cobra.Command, args []string) error {
 
 	}()
 
+	w := webrtc.Configuration{}
+
 	signal := client.NewJSONRPCSignalClient(ctx)
-	c, err := client.NewClient(signal, w)
+	c, err := client.NewClient(signal, &w)
 	if err != nil {
 		log.Debugf("error initializing client %v", err)
 	}
@@ -67,7 +67,7 @@ func clientMain(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	c.OnTrack = func(t *webrtc.Track, r *webrtc.RTPReceiver) {
+	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver) {
 		log.Debugf("Client got track!!!!")
 	}
 
@@ -89,6 +89,8 @@ func clientMain(cmd *cobra.Command, args []string) error {
 		log.Errorf("error publishing tracks: %v", err)
 		return err
 	}
+
+	log.Debugf("tracks published")
 
 	for {
 		select {

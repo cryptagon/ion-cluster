@@ -2,7 +2,6 @@ package client
 
 import (
 	log "github.com/pion/ion-log"
-	sfu "github.com/pion/ion-sfu/pkg"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -19,12 +18,12 @@ type transport struct {
 	candidates []*webrtc.ICECandidateInit
 }
 
-func newTransport(role int, signal Signal, cfg sfu.WebRTCTransportConfig) (*transport, error) {
-	me := webrtc.MediaEngine{}
-	me.RegisterDefaultCodecs()
+func newTransport(role int, signal Signal, cfg *webrtc.Configuration) (*transport, error) {
+	me, _ := getProducerMediaEngine()
+	se := webrtc.SettingEngine{}
 
-	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(cfg.Setting))
-	pc, err := api.NewPeerConnection(cfg.Configuration)
+	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(se))
+	pc, err := api.NewPeerConnection(*cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -63,11 +62,11 @@ type Client struct {
 	pub *transport
 	sub *transport
 
-	OnTrack func(*webrtc.Track, *webrtc.RTPReceiver)
+	OnTrack func(*webrtc.TrackRemote, *webrtc.RTPReceiver)
 }
 
 //NewClient returns a new jsonrpc2 client that manages a pub and sub peerConnection
-func NewClient(signal Signal, cfg sfu.WebRTCTransportConfig) (*Client, error) {
+func NewClient(signal Signal, cfg *webrtc.Configuration) (*Client, error) {
 	pub, err := newTransport(rolePublish, signal, cfg)
 	if err != nil {
 		return nil, err
@@ -89,8 +88,8 @@ func (c *Client) Join(sid string) error {
 	c.signal.OnNegotiate(c.signalOnNegotiate)
 	c.signal.OnTrickle(c.signalOnTrickle)
 
-	c.sub.pc.OnTrack(func(track *webrtc.Track, recv *webrtc.RTPReceiver) {
-		log.Debugf("client sub got remote stream %v track %v", track.Msid(), track.Label())
+	c.sub.pc.OnTrack(func(track *webrtc.TrackRemote, recv *webrtc.RTPReceiver) {
+		log.Debugf("client sub got remote stream %v track %v", track.Msid(), track.ID())
 		if c.OnTrack != nil {
 			c.OnTrack(track, recv)
 		}
@@ -127,13 +126,36 @@ func (c *Client) Join(sid string) error {
 
 // Publish takes a producer and publishes its data to the peer connection
 func (c *Client) Publish(p producer) error {
-	if _, err := c.pub.pc.AddTrack(p.VideoTrack()); err != nil {
+	videoSender, err := c.pub.pc.AddTrack(p.VideoTrack())
+	if err != nil {
 		return err
 	}
-	if _, err := c.pub.pc.AddTrack(p.AudioTrack()); err != nil {
+	audioSender, err := c.pub.pc.AddTrack(p.AudioTrack())
+	if err != nil {
 		return err
 
 	}
+	defer c.pubNegotiationNeeded()
+
+	go func() {
+		rtcpBuf := make([]byte, 1500)
+		for {
+			if _, _, rtcpErr := videoSender.Read(rtcpBuf); rtcpErr != nil {
+				log.Errorf("videoSender rtcp error: %v", err)
+				return
+			}
+		}
+	}()
+
+	go func() {
+		rtcpBuf := make([]byte, 1500)
+		for {
+			if _, _, rtcpErr := audioSender.Read(rtcpBuf); rtcpErr != nil {
+				log.Errorf("audioSender rtcp error: %v", err)
+				return
+			}
+		}
+	}()
 
 	go p.Start()
 	return nil
