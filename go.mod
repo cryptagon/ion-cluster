@@ -21,7 +21,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/ion-log v1.0.0
-	github.com/pion/ion-sfu v1.7.3
+	github.com/pion/ion-sfu v1.7.7
 	github.com/pion/quic v0.1.4 // indirect
 	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
