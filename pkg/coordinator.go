@@ -21,10 +21,18 @@ type sessionMeta struct {
 	Redirect     bool   `json:"redirect"`
 }
 
+type nodeMeta struct {
+	NodeID       string    `json:"node_id"`
+	NodeState    NodeState `json:"node_state"`
+	SessionCount int       `json:"session_count"`
+	ClientCount  int       `json:"client_count"`
+}
+
 // Coordinator is responsible for managing sessions
 // and providing rpc connections to other nodes
 type coordinator interface {
 	getOrCreateSession(sessionID string) (*sessionMeta, error)
+	updateNodeState(state NodeState, sessionCount int, clientCount int) error
 	sfu.SessionProvider
 }
 
@@ -56,6 +64,11 @@ func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
 		sessions:     make(map[string]*sfu.Session),
 		w:            w,
 	}, nil
+}
+
+func (c *localCoordinator) updateNodeState(state NodeState, sessionCount int, clientCount int) error {
+	log.Debugf("updateNodeMeta: %v => (%v,%v)", state, sessionCount, clientCount)
+	return nil
 }
 
 func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {

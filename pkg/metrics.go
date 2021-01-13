@@ -47,6 +47,13 @@ func metricsHandler() http.Handler {
 	)
 }
 
+// MetricsGetActiveSessions returns number of sessions hosted on this node
+func MetricsGetActiveSessions() int {
+	sessionCount := dto.Metric{}
+	prometheusGaugeSessions.Write(&sessionCount)
+	return int(sessionCount.GetGauge().GetValue())
+}
+
 // MetricsGetActiveClientsCount returns number of active clients connected to this node
 func MetricsGetActiveClientsCount() int {
 	clientCount := dto.Metric{}

@@ -59,6 +59,7 @@ func serverMain(cmd *cobra.Command, args []string) error {
 			return err
 		case sig := <-sigs:
 			log.Debugf("Got Signal %v, beginning shutdown", sig)
+			sServer.NodeState(cluster.NodeStateTerminating)
 			ticker := time.NewTicker(500 * time.Millisecond)
 			for {
 				active := cluster.MetricsGetActiveClientsCount()

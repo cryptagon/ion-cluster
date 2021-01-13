@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -19,8 +20,21 @@ import (
 	_ "net/http/pprof"
 )
 
+// NodeState represents the current state of the node
+type NodeState string
+
+var (
+	// NodeStateInit the node is initializing
+	NodeStateInit NodeState = "init"
+	// NodeStateReady the node is ready for clients
+	NodeStateReady NodeState = "online"
+	// NodeStateTerminating the node is draining and preparing to shutdown
+	NodeStateTerminating NodeState = "terminating"
+)
+
 // Signal is the grpc/http/websocket signaling server
 type Signal struct {
+	state   NodeState
 	c       coordinator
 	errChan chan error
 
@@ -31,11 +45,32 @@ type Signal struct {
 func NewSignal(s *sfu.SFU, c coordinator, conf SignalConfig) (*Signal, chan error) {
 	e := make(chan error)
 	w := &Signal{
+		state:   NodeStateInit,
 		c:       c,
 		errChan: e,
 		config:  conf,
 	}
+	go w.monitor()
 	return w, e
+}
+
+func (s *Signal) monitor() {
+	t := time.NewTicker(1000 * time.Millisecond)
+	for {
+		select {
+		case <-t.C:
+			err := s.c.updateNodeState(s.state, MetricsGetActiveSessions(), MetricsGetActiveClientsCount())
+			if err != nil {
+				s.errChan <- err
+				return
+			}
+		}
+	}
+}
+
+// NodeState Updates the state  node
+func (s *Signal) NodeState(n NodeState) {
+	s.state = n
 }
 
 // ServeWebsocket listens for incoming websocket signaling requests
@@ -117,6 +152,7 @@ func (s *Signal) ServeWebsocket() {
 	}))
 
 	http.Handle("/", r)
+	s.NodeState(NodeStateReady)
 
 	var err error
 	if s.config.Key != "" && s.config.Cert != "" {

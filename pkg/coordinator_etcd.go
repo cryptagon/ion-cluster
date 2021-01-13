@@ -22,6 +22,9 @@ type etcdCoordinator struct {
 	nodeEndpoint string
 	client       *clientv3.Client
 
+	nodeLease       *clientv3.LeaseGrantResponse
+	nodeLeaseCancel context.CancelFunc
+
 	w             sfu.WebRTCTransportConfig
 	localSessions map[string]*sfu.Session
 	sessionLeases map[string]context.CancelFunc
@@ -48,6 +51,66 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 		sessionLeases: make(map[string]context.CancelFunc),
 		localSessions: make(map[string]*sfu.Session),
 	}, nil
+}
+
+func (e *etcdCoordinator) updateNodeState(state NodeState, sessionCount int, clientCount int) error {
+	log.Debugf("updateNodeMeta: %v => (%v,%v)", state, sessionCount, clientCount)
+
+	// This operation is only alloted 5 seconds to complete
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	s, err := concurrency.NewSession(e.client, concurrency.WithContext(ctx))
+	if err != nil {
+		return err
+	}
+
+	// Acquire the lock for this nodeID
+	key := fmt.Sprintf("/node/%v", e.nodeID)
+	mu := concurrency.NewMutex(s, key)
+	if err := mu.Lock(ctx); err != nil {
+		log.Errorf("could not acquire node lock")
+		return err
+	}
+	defer mu.Unlock(ctx)
+
+	// If we don't have a nodeLease lets create one
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.nodeLease == nil {
+		log.Debugf("making lease")
+		// First lets create a lease for the sessionKey
+		lease, err := e.client.Grant(ctx, 1)
+		if err != nil {
+			log.Errorf("error acquiring lease for node key %v: %v", key, err)
+			return err
+		}
+
+		ctx, leaseCancel := context.WithCancel(context.Background())
+		leaseKeepAlive, err := e.client.KeepAlive(ctx, lease.ID)
+		if err != nil {
+			log.Errorf("error activating keepAlive for lease %v: %v", lease.ID, err)
+		}
+		<-leaseKeepAlive
+
+		e.nodeLease = lease
+		e.nodeLeaseCancel = leaseCancel
+	}
+
+	meta := nodeMeta{
+		NodeID:       e.nodeID,
+		NodeState:    state,
+		SessionCount: sessionCount,
+		ClientCount:  clientCount,
+	}
+	payload, _ := json.Marshal(&meta)
+	_, err = e.client.Put(ctx, key, string(payload), clientv3.WithLease(e.nodeLease.ID))
+	if err != nil {
+		log.Errorf("error storing session meta")
+		return err
+	}
+
+	return nil
 }
 
 func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, error) {
