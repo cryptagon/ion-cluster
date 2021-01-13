@@ -158,6 +158,11 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	// Session does not already exist, so lets take it
 	// @todo load balance here / be smarter
 
+	node, err := e.findLeastCrowdedNode(ctx)
+	if err != nil {
+		log.Errorf("error finding best node: %v", err)
+	}
+
 	// First lets create a lease for the sessionKey
 	lease, err := e.client.Grant(ctx, 1)
 	if err != nil {
@@ -189,6 +194,36 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	}
 
 	return &meta, nil
+}
+
+func (e *etcdCoordinator) findLeastCrowdedNode(ctx context.Context) (*nodeMeta, error) {
+	kv := clientv3.NewKV(e.client)
+	rangeResp, err := kv.Get(ctx, "/node/", clientv3.WithPrefix())
+
+	nodes := []nodeMeta{}
+	for k, v := range rangeResp.Kvs {
+		node := nodeMeta{}
+		if err := json.Unmarshal(v.Value, &node); err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, node)
+	}
+
+	log.Debugf("found nodes: %#v", nodes)
+	var bestNode *nodeMeta
+
+	for _, node := range nodes {
+		if bestNode == nil {
+			bestNode = &node
+			continue
+		}
+
+		if node.SessionCount < bestNode.SessionCount {
+			bestNode = &node
+		}
+	}
+
+	return bestNode, nil
 }
 
 func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
