@@ -99,6 +99,7 @@ func (e *etcdCoordinator) updateNodeState(state NodeState, sessionCount int, cli
 
 	meta := nodeMeta{
 		NodeID:       e.nodeID,
+		NodeEndpoint: e.nodeEndpoint,
 		NodeState:    state,
 		SessionCount: sessionCount,
 		ClientCount:  clientCount,
@@ -151,13 +152,38 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 		}
 		meta.Redirect = (meta.NodeID != e.nodeID)
 
+		// // If we own this session, but we don't have a lease for it
+		// // then the session was allocated to us by another node so lets acquire the lease
+		if _, ok := e.sessionLeases[meta.SessionID]; !ok && !meta.Redirect {
+			// First lets create a lease for the sessionKey
+			lease, err := e.client.Grant(ctx, 1)
+			if err != nil {
+				log.Errorf("error acquiring lease for session key %v: %v", key, err)
+				return nil, err
+			}
+
+			ctx, leaseCancel := context.WithCancel(context.Background())
+			leaseKeepAlive, err := e.client.KeepAlive(ctx, lease.ID)
+			if err != nil {
+				log.Errorf("error activating keepAlive for lease %v: %v", lease.ID, err)
+			}
+			<-leaseKeepAlive
+
+			e.mu.Lock()
+			e.sessionLeases[sessionID] = leaseCancel
+			defer e.mu.Unlock()
+
+			payload, _ := json.Marshal(&meta)
+			_, err = e.client.Put(ctx, key, string(payload), clientv3.WithLease(lease.ID))
+			log.Debugf("took over session lease %v", meta.SessionID)
+		}
+
 		// return meta for session
 		return &meta, nil
 	}
 
 	// Session does not already exist, so lets take it
 	// @todo load balance here / be smarter
-
 	node, err := e.findLeastCrowdedNode(ctx)
 	if err != nil {
 		log.Errorf("error finding best node: %v", err)
@@ -170,21 +196,25 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 		return nil, err
 	}
 
-	ctx, leaseCancel := context.WithCancel(context.Background())
-	leaseKeepAlive, err := e.client.KeepAlive(ctx, lease.ID)
-	if err != nil {
-		log.Errorf("error activating keepAlive for lease %v: %v", lease.ID, err)
-	}
-	<-leaseKeepAlive
+	// Brand new session and we're the best node to take it, lets keepalive the lease right now
+	if node.NodeID == e.nodeID {
+		ctx, leaseCancel := context.WithCancel(context.Background())
+		leaseKeepAlive, err := e.client.KeepAlive(ctx, lease.ID)
+		if err != nil {
+			log.Errorf("error activating keepAlive for lease %v: %v", lease.ID, err)
+		}
+		<-leaseKeepAlive
 
-	e.mu.Lock()
-	e.sessionLeases[sessionID] = leaseCancel
-	defer e.mu.Unlock()
+		e.mu.Lock()
+		e.sessionLeases[sessionID] = leaseCancel
+		defer e.mu.Unlock()
+	}
 
 	meta := sessionMeta{
 		SessionID:    sessionID,
-		NodeID:       e.nodeID,
-		NodeEndpoint: e.nodeEndpoint,
+		NodeID:       node.NodeID,
+		NodeEndpoint: node.NodeEndpoint,
+		Redirect:     (node.NodeID != e.nodeID),
 	}
 	payload, _ := json.Marshal(&meta)
 	_, err = e.client.Put(ctx, key, string(payload), clientv3.WithLease(lease.ID))
@@ -199,9 +229,12 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 func (e *etcdCoordinator) findLeastCrowdedNode(ctx context.Context) (*nodeMeta, error) {
 	kv := clientv3.NewKV(e.client)
 	rangeResp, err := kv.Get(ctx, "/node/", clientv3.WithPrefix())
+	if err != nil {
+		return nil, err
+	}
 
 	nodes := []nodeMeta{}
-	for k, v := range rangeResp.Kvs {
+	for _, v := range rangeResp.Kvs {
 		node := nodeMeta{}
 		if err := json.Unmarshal(v.Value, &node); err != nil {
 			return nil, err
@@ -211,18 +244,21 @@ func (e *etcdCoordinator) findLeastCrowdedNode(ctx context.Context) (*nodeMeta, 
 
 	log.Debugf("found nodes: %#v", nodes)
 	var bestNode *nodeMeta
-
-	for _, node := range nodes {
+	for i := range nodes {
+		log.Debugf("curBestNode: %#v", bestNode)
 		if bestNode == nil {
-			bestNode = &node
+			log.Debugf("set to node %#v", nodes[i])
+			bestNode = &nodes[i]
 			continue
 		}
 
-		if node.SessionCount < bestNode.SessionCount {
-			bestNode = &node
+		if nodes[i].SessionCount < bestNode.SessionCount {
+			log.Debugf("set to node %#v", nodes[i])
+			bestNode = &nodes[i]
 		}
 	}
 
+	log.Debugf("bestNode: %#v", bestNode)
 	return bestNode, nil
 }
 

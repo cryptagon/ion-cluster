@@ -24,6 +24,7 @@ type sessionMeta struct {
 type nodeMeta struct {
 	NodeID       string    `json:"node_id"`
 	NodeState    NodeState `json:"node_state"`
+	NodeEndpoint string    `json:"node_endpoint"`
 	SessionCount int       `json:"session_count"`
 	ClientCount  int       `json:"client_count"`
 }

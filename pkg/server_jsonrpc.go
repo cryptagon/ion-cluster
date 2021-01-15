@@ -57,21 +57,21 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			break
 		}
 
-		meta, err := p.c.getOrCreateSession(join.Sid)
-		if err != nil {
-			replyError(err)
-			break
-		}
+		// meta, err := p.c.getOrCreateSession(join.Sid)
+		// if err != nil {
+		// 	replyError(err)
+		// 	break
+		// }
 
-		if meta.Redirect {
-			payload, _ := json.Marshal(meta)
-			// session exists on other node, let client know
-			_ = conn.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{
-				Code:    302,
-				Message: string(payload),
-			})
-			break
-		}
+		// if meta.Redirect {
+		// 	payload, _ := json.Marshal(meta)
+		// 	// session exists on other node, let client know
+		// 	_ = conn.ReplyWithError(ctx, req.ID, &jsonrpc2.Error{
+		// 		Code:    302,
+		// 		Message: string(payload),
+		// 	})
+		// 	break
+		// }
 
 		answer, err := p.Join(join.Sid, join.Offer)
 		if err != nil {
