@@ -28,7 +28,7 @@ type Signal struct {
 }
 
 // NewSignal creates a signaling server
-func NewSignal(s *sfu.SFU, c coordinator, conf SignalConfig) (*Signal, chan error) {
+func NewSignal(c coordinator, conf SignalConfig) (*Signal, chan error) {
 	e := make(chan error)
 	w := &Signal{
 		c:       c,
