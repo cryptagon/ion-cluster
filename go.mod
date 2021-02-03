@@ -2,10 +2,10 @@ module github.com/pion/ion-cluster
 
 go 1.15
 
-//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master-tandem
-// replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201216181931-d34903e6e72e
+//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master
+replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20210203183419-9d61315fb215
 
-replace github.com/pion/ion-sfu => /home/billy/Development/go/src/github.com/pion/ion-sfu
+// replace github.com/pion/ion-sfu => /home/billy/Development/go/src/github.com/pion/ion-sfu
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 

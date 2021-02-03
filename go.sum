@@ -76,6 +76,8 @@ github.com/billylindeman/ion-sfu v1.0.4-0.20201207210001-f4b409a7d0f8 h1:kwLAUN0
 github.com/billylindeman/ion-sfu v1.0.4-0.20201207210001-f4b409a7d0f8/go.mod h1:myp3DIwptKEBeVKn0i0nQpr1DMMEtfaqs+8MzA/Ev2Q=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201216181931-d34903e6e72e h1:eYhNn8IpG13W0Sw09qZFWOnKZt+pIQV6Sx7sOhwkoKo=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201216181931-d34903e6e72e/go.mod h1:myp3DIwptKEBeVKn0i0nQpr1DMMEtfaqs+8MzA/Ev2Q=
+github.com/billylindeman/ion-sfu v1.0.4-0.20210203183419-9d61315fb215 h1:UJVLMetX64hqZfLv0dFvZujpYAVopINOPruvO+soEu8=
+github.com/billylindeman/ion-sfu v1.0.4-0.20210203183419-9d61315fb215/go.mod h1:MKDh4JSLpBA/hFeYAYALb6nYpe6Ruknd3pmxPMbdpM8=
 github.com/bketelsen/crypt v0.0.3-0.20200106085610-5cbc8cc4026c/go.mod h1:MKsuJmJgSg28kpZDP6UIiPt0e0Oz0kqKNGyRaWEPv84=
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
 github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
