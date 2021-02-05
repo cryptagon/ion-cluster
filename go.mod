@@ -3,9 +3,9 @@ module github.com/pion/ion-cluster
 go 1.15
 
 //replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master
-replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20210203183419-9d61315fb215
+//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20210203183419-9d61315fb215
 
-// replace github.com/pion/ion-sfu => /home/billy/Development/go/src/github.com/pion/ion-sfu
+//replace github.com/pion/ion-sfu => /home/billy/Development/go/src/github.com/pion/ion-sfu
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
@@ -21,7 +21,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/ion-log v1.0.0
-	github.com/pion/ion-sfu v1.8.2
+	github.com/pion/ion-sfu v1.8.3
 	github.com/pion/quic v0.1.4 // indirect
 	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
