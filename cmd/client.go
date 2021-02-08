@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/pion/webrtc/v3"
 
@@ -92,8 +93,14 @@ func clientMain(cmd *cobra.Command, args []string) error {
 
 	log.Debugf("tracks published")
 
+	t := time.NewTicker(time.Second * 5)
 	for {
 		select {
+		case <-t.C:
+			if err := signal.Ping(); err != nil {
+				log.Debugf("signal ping err: %v", err)
+			}
+			log.Debugf("signal ping got pong")
 		case sig := <-sigs:
 			log.Debugf("got signal %v", sig)
 			signal.Close()

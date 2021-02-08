@@ -22,6 +22,7 @@ var (
 type Signal interface {
 	Open(url string) (closed <-chan struct{}, err error)
 	Close() error
+	Ping() error
 
 	Join(sid string, offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error)
 	Offer(offer *webrtc.SessionDescription) (*webrtc.SessionDescription, error)
@@ -145,6 +146,15 @@ func (c *JSONRPCSignalClient) Handle(ctx context.Context, conn *jsonrpc2.Conn, r
 			c.onTrickle(trickle.Target, &trickle.Candidate)
 		}
 	}
+}
+
+// Ping sends a ping message
+func (c *JSONRPCSignalClient) Ping() error {
+	if c.jc == nil {
+		return errNotConnected
+	}
+
+	return c.jc.Call(c.context, "ping", nil, nil)
 }
 
 //OnNegotiate hook a negotiation handler
