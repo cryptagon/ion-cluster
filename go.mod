@@ -3,7 +3,7 @@ module github.com/pion/ion-cluster
 go 1.15
 
 //replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master
-//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20210203183419-9d61315fb215
+replace github.com/pion/ion-sfu => github.com/pion/ion-sfu v1.8.4-0.20210209170436-08fe8318c4fa
 
 //replace github.com/pion/ion-sfu => /home/billy/Development/go/src/github.com/pion/ion-sfu
 
