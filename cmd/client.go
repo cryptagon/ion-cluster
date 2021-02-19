@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/pion/interceptor"
 	"github.com/pion/webrtc/v3"
 
 	"github.com/pion/ion-cluster/pkg/client"
@@ -56,7 +57,7 @@ func clientMain(cmd *cobra.Command, args []string) error {
 	w := webrtc.Configuration{}
 
 	signal := client.NewJSONRPCSignalClient(ctx)
-	c, err := client.NewClient(signal, &w)
+	c, err := client.NewClient(signal, &w, []interceptor.Interceptor{})
 	if err != nil {
 		log.Debugf("error initializing client %v", err)
 	}

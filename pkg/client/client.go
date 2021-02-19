@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/pion/interceptor"
 	log "github.com/pion/ion-log"
 	"github.com/pion/webrtc/v3"
 )
@@ -18,11 +19,19 @@ type transport struct {
 	candidates []*webrtc.ICECandidateInit
 }
 
-func newTransport(role int, signal Signal, cfg *webrtc.Configuration) (*transport, error) {
+func newTransport(role int, signal Signal, cfg *webrtc.Configuration, extraInterceptors []interceptor.Interceptor) (*transport, error) {
 	me, _ := getProducerMediaEngine()
 	se := webrtc.SettingEngine{}
 
-	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(se))
+	i := &interceptor.Registry{}
+	if err := webrtc.RegisterDefaultInterceptors(me, i); err != nil {
+		return nil, err
+	}
+	for _, itc := range extraInterceptors {
+		i.Add(itc)
+	}
+
+	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(se), webrtc.WithInterceptorRegistry(i))
 	pc, err := api.NewPeerConnection(*cfg)
 	if err != nil {
 		return nil, err
@@ -66,12 +75,12 @@ type Client struct {
 }
 
 //NewClient returns a new jsonrpc2 client that manages a pub and sub peerConnection
-func NewClient(signal Signal, cfg *webrtc.Configuration) (*Client, error) {
-	pub, err := newTransport(rolePublish, signal, cfg)
+func NewClient(signal Signal, cfg *webrtc.Configuration, pubInterceptors []interceptor.Interceptor) (*Client, error) {
+	pub, err := newTransport(rolePublish, signal, cfg, pubInterceptors)
 	if err != nil {
 		return nil, err
 	}
-	sub, err := newTransport(roleSubscribe, signal, cfg)
+	sub, err := newTransport(roleSubscribe, signal, cfg, []interceptor.Interceptor{})
 	if err != nil {
 		return nil, err
 	}
