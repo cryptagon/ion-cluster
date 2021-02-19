@@ -196,6 +196,11 @@ func (c *Client) pubNegotiationNeeded() {
 	log.Debugf("client negotiated")
 }
 
+// CreateDatachannel to publish
+func (c *Client) CreateDatachannel(label string) (*webrtc.DataChannel, error) {
+	return c.pub.pc.CreateDataChannel(label, nil)
+}
+
 // signalOnNegotiate is triggered from server for the sub pc
 func (c *Client) signalOnNegotiate(desc *webrtc.SessionDescription) {
 	if err := c.sub.pc.SetRemoteDescription(*desc); err != nil {
