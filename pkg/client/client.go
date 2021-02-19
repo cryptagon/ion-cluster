@@ -125,7 +125,7 @@ func (c *Client) Join(sid string) error {
 }
 
 // Publish takes a producer and publishes its data to the peer connection
-func (c *Client) Publish(p producer) error {
+func (c *Client) Publish(p Producer) error {
 	videoSender, err := c.pub.pc.AddTrack(p.VideoTrack())
 	if err != nil {
 		return err

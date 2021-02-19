@@ -8,8 +8,8 @@ import (
 	"github.com/pion/webrtc/v3"
 )
 
-//producer interface
-type producer interface {
+//Producer interface
+type Producer interface {
 	Start()
 	Stop()
 
