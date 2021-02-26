@@ -72,7 +72,7 @@ func (c *JSONRPCSignalClient) Join(sid string, offer *webrtc.SessionDescription)
 	log.Debugf("signal client sending join: %v ", sid)
 	var answer *webrtc.SessionDescription
 
-	err := c.jc.Call(c.context, "join", &cluster.Join{Sid: sid, Offer: *offer}, &answer)
+	err := c.jc.Call(c.context, "join", &cluster.Join{SID: sid, Offer: *offer}, &answer)
 	if err != nil {
 		return nil, err
 	}
