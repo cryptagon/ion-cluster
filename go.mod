@@ -2,6 +2,7 @@ module github.com/pion/ion-cluster
 
 go 1.15
 
+// replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master
 //replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master
 // replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 
@@ -20,11 +21,11 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/interceptor v0.0.9
 	github.com/pion/ion-log v1.0.0
-	github.com/pion/ion-sfu v1.9.0
+	github.com/pion/ion-sfu v1.9.1-0.20210220020230-c52b1cd81c3a
 	github.com/pion/quic v0.1.4 // indirect
 	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
-	github.com/pion/webrtc/v3 v3.0.4
+	github.com/pion/webrtc/v3 v3.0.10
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
