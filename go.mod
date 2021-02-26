@@ -2,10 +2,10 @@ module github.com/pion/ion-cluster
 
 go 1.15
 
-//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master-tandem
-// replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu v1.0.4-0.20201216181931-d34903e6e72e
+//replace github.com/pion/ion-sfu => github.com/billylindeman/ion-sfu  master
+//replace github.com/pion/ion-sfu => github.com/pion/ion-sfu v1.8.4-0.20210209170436-08fe8318c4fa
 
-// replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
+replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
@@ -22,11 +22,11 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/interceptor v0.0.9
 	github.com/pion/ion-log v1.0.0
-	github.com/pion/ion-sfu v1.7.3
+	github.com/pion/ion-sfu v1.8.3
 	github.com/pion/quic v0.1.4 // indirect
 	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
-	github.com/pion/webrtc/v3 v3.0.3
+	github.com/pion/webrtc/v3 v3.0.4
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0

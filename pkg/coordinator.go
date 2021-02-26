@@ -7,6 +7,7 @@ import (
 
 	"github.com/pborman/uuid"
 	log "github.com/pion/ion-log"
+	"github.com/pion/ion-sfu/pkg/middlewares/datachannel"
 	"github.com/pion/ion-sfu/pkg/sfu"
 )
 
@@ -43,16 +44,21 @@ type localCoordinator struct {
 	nodeID       string
 	nodeEndpoint string
 
-	mu       sync.Mutex
-	w        sfu.WebRTCTransportConfig
-	sessions map[string]*sfu.Session
+	mu           sync.Mutex
+	w            sfu.WebRTCTransportConfig
+	sessions     map[string]*sfu.Session
+	datachannels []*sfu.Datachannel
 }
 
 func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
 	w := sfu.NewWebRTCTransportConfig(conf.SFU)
+	dc := &sfu.Datachannel{Label: sfu.APIChannelLabel}
+	dc.Use(datachannel.SubscriberAPI)
+
 	return &localCoordinator{
 		nodeID:       uuid.New(),
 		nodeEndpoint: conf.Endpoint(),
+		datachannels: []*sfu.Datachannel{dc},
 		sessions:     make(map[string]*sfu.Session),
 		w:            w,
 	}, nil
@@ -66,7 +72,7 @@ func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
 		return s
 	}
 
-	s := sfu.NewSession(sessionID)
+	s := sfu.NewSession(sessionID, c.datachannels, c.w)
 	s.OnClose(func() {
 		c.onSessionClosed(sessionID)
 	})

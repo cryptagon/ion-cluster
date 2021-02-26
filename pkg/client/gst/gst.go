@@ -35,9 +35,9 @@ var pipelinesLock sync.Mutex
 
 func getEncoderString() string {
 	if runtime.GOOS == "darwin" {
-		return "vtenc_h264 realtime=true allow-frame-reordering=false max-keyframe-interval=60 ! h264parse config-interval=1"
+		return "vtenc_h264 realtime=true allow-frame-reordering=false max-keyframe-interval=60 ! video/x-h264, profile=baseline ! h264parse config-interval=1"
 	}
-	return "x264enc bframes=0 speed-preset=ultrafast key-int-max=60 ! h264parse config-interval=1"
+	return "x264enc bframes=0 speed-preset=ultrafast key-int-max=60 ! video/x-h264, profile=baseline ! h264parse config-interval=1"
 }
 
 // CreatePipeline creates a GStreamer Pipeline

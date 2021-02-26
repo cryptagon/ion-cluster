@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -30,22 +31,28 @@ func init() {
 func serverMain(cmd *cobra.Command, args []string) error {
 
 	log.Infof("--- Starting SFU Node ---")
-	s := sfu.NewSFU(conf.SFU)
-
 	coordinator, err := cluster.NewCoordinator(conf)
 	if err != nil {
 		log.Errorf("error creating coordinator: %v", err)
 		return err
 	}
 
+	ballast := make([]byte, conf.SFU.SFU.Ballast*1024*1024)
+	runtime.KeepAlive(ballast)
+
 	// Spin up websocket
-	sServer, sError := cluster.NewSignal(s, coordinator, conf.Signal)
+	sServer, sError := cluster.NewSignal(coordinator, conf.Signal)
 	if conf.Signal.HTTPAddr != "" {
 		go sServer.ServeWebsocket()
 	}
-	// if conf.Signal.GRPCAddr != "" {
-	// 	go sServer.ServeGRPC()
-	// }
+
+	if conf.SFU.Turn.Enabled {
+		_, err := sfu.InitTurnServer(conf.SFU.Turn, nil)
+		log.Infof("Started TURN Server: Listening at %v", conf.SFU.Turn.Address)
+		if err != nil {
+			log.Panicf("Could not init turn server err: %v", err)
+		}
+	}
 
 	// Listen for signals
 	sigs := make(chan os.Signal, 1)
