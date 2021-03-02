@@ -176,9 +176,12 @@ func (e *etcdCoordinator) onSessionClosed(sessionID string) {
 	defer mu.Unlock(ctx)
 
 	// Cancel our lease
-	leaseCancel := e.sessionLeases[sessionID]
-	delete(e.sessionLeases, sessionID)
-	leaseCancel()
+	if leaseCancel, ok := e.sessionLeases[sessionID]; ok {
+		delete(e.sessionLeases, sessionID)
+		leaseCancel()
+	} else {
+		log.Warnf("Could not find session lease!")
+	}
 
 	// Delete session meta
 	_, err = e.client.Delete(ctx, key)
