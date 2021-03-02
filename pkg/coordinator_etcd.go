@@ -9,6 +9,7 @@ import (
 
 	"github.com/pborman/uuid"
 	log "github.com/pion/ion-log"
+	"github.com/pion/ion-sfu/pkg/buffer"
 	"github.com/pion/ion-sfu/pkg/middlewares/datachannel"
 	"github.com/pion/ion-sfu/pkg/sfu"
 	"google.golang.org/grpc"
@@ -24,6 +25,7 @@ type etcdCoordinator struct {
 	client       *clientv3.Client
 
 	w             sfu.WebRTCTransportConfig
+	bufferFactory *buffer.Factory
 	datachannels  []*sfu.Datachannel
 	localSessions map[string]*sfu.Session
 	sessionLeases map[string]context.CancelFunc
@@ -39,6 +41,10 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if conf.SFU.BufferFactory == nil {
+		conf.SFU.BufferFactory = buffer.NewBufferFactory(conf.SFU.Router.MaxPacketTrack)
+	}
 	w := sfu.NewWebRTCTransportConfig(conf.SFU)
 	dc := &sfu.Datachannel{Label: sfu.APIChannelLabel}
 	dc.Use(datachannel.SubscriberAPI)
@@ -49,6 +55,7 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 		nodeID:        uuid.New(),
 		nodeEndpoint:  conf.Endpoint(),
 		w:             w,
+		bufferFactory: conf.SFU.BufferFactory,
 		datachannels:  []*sfu.Datachannel{dc},
 		sessionLeases: make(map[string]context.CancelFunc),
 		localSessions: make(map[string]*sfu.Session),
@@ -141,7 +148,7 @@ func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
 		return s
 	}
 
-	s := sfu.NewSession(sessionID, e.datachannels, e.w)
+	s := sfu.NewSession(sessionID, e.bufferFactory, e.datachannels, e.w)
 	s.OnClose(func() {
 		e.onSessionClosed(sessionID)
 	})
