@@ -18,6 +18,10 @@ enabled = false
 keytype = "HMAC"
 key = "1q2dGu5pzikcrECJgW3ADfXX3EsmoD99SYvSVCpDsJrAqxou5tUNbHPvkEFI4bTS"
 
+[sfu.sfu]
+ballast = 1024
+withstats = true
+
 [sfu.router]
 # Limit the remb bandwidth in kbps
 # zero means no limits
