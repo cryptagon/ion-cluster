@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -35,6 +36,7 @@ func init() {
 	clientCmd.PersistentFlags().StringVarP(&clientToken, "token", "t", "", "jwt access token")
 
 	rootCmd.AddCommand(clientCmd)
+	runtime.LockOSThread()
 }
 
 func endpoint() string {
@@ -47,14 +49,16 @@ func endpoint() string {
 }
 
 func clientMain(cmd *cobra.Command, args []string) error {
+	go clientThread(cmd, args)
+	gst.MainLoop()
+	return nil
+}
+
+func clientThread(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-
-	}()
-
 	w := webrtc.Configuration{}
 
 	signal := client.NewJSONRPCSignalClient(ctx)
@@ -73,23 +77,27 @@ func clientMain(cmd *cobra.Command, args []string) error {
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver) {
 		log.Debugf("Client got track!!!!")
 
-		var videoTrack, audioTrack *webrtc.TrackRemote
-		switch t.Kind() {
-		case webrtc.RTPCodecTypeVideo:
-			videoTrack = t
-		case webrtc.RTPCodecTypeAudio:
-			audioTrack = t
-		}
-		pipeline := gst.CreateClientPipeline(audioTrack, videoTrack)
-		pipeline.Start()
-		buf := make([]byte, 1400)
-		for {
-			i, _, readErr := t.Read(buf)
-			if readErr != nil {
-				panic(err)
+		go func() {
+			var videoTrack, audioTrack *webrtc.TrackRemote
+			switch t.Kind() {
+			case webrtc.RTPCodecTypeVideo:
+				videoTrack = t
+			case webrtc.RTPCodecTypeAudio:
+				audioTrack = t
 			}
-			pipeline.Push(buf[:i], t.ID())
-		}
+
+			log.Debugf("client pipeline starting: ", t)
+			pipeline := gst.CreateClientPipeline(audioTrack, videoTrack)
+			pipeline.Start()
+			buf := make([]byte, 1400)
+			for {
+				i, _, readErr := t.Read(buf)
+				if readErr != nil {
+					panic(err)
+				}
+				pipeline.Push(buf[:i], t.ID())
+			}
+		}()
 	}
 
 	if err := c.Join(clientSID); err != nil {
@@ -105,13 +113,15 @@ func clientMain(cmd *cobra.Command, args []string) error {
 		// producer = client.NewGSTProducer(c, "video", "")
 	}
 
-	log.Debugf("publishing tracks")
-	if err := c.Publish(producer); err != nil {
-		log.Errorf("error publishing tracks: %v", err)
-		return err
-	}
+	if producer != nil {
+		log.Debugf("publishing tracks")
+		if err := c.Publish(producer); err != nil {
+			log.Errorf("error publishing tracks: %v", err)
+			return err
+		}
 
-	log.Debugf("tracks published")
+		log.Debugf("tracks published")
+	}
 
 	t := time.NewTicker(time.Second * 5)
 	for {
@@ -126,6 +136,7 @@ func clientMain(cmd *cobra.Command, args []string) error {
 			signal.Close()
 		case <-signalClosedCh:
 			log.Debugf("signal closed")
+			os.Exit(1)
 			return nil
 		}
 	}

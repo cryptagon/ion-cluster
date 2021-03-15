@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 	"unsafe"
@@ -19,8 +20,8 @@ import (
 	"github.com/pion/webrtc/v3/pkg/media"
 )
 
-func init() {
-	go C.gstreamer_send_start_mainloop()
+func MainLoop() {
+	C.gstreamer_send_start_mainloop()
 }
 
 // Pipeline is a wrapper for a GStreamer Pipeline
@@ -78,9 +79,9 @@ func CreateClientPipeline(audioTrack *webrtc.TrackRemote, videoTrack *webrtc.Tra
 	pipelineStr := ""
 	if audioTrack != nil {
 		audioPipe := fmt.Sprintf("appsrc format=time is-live=true do-timestamp=true name=%s ! application/x-rtp", audioTrack.ID())
-		switch audioTrack.Codec().MimeType {
+		switch strings.ToLower(audioTrack.Codec().MimeType) {
 		case "audio/opus":
-			audioPipe += ", encoding-name=OPUS ! rtpopusdepay ! decodebin ! autoaudiosink"
+			audioPipe += ", encoding-name=OPUS, payload=96 ! rtpopusdepay ! decodebin ! autoaudiosink"
 		case "audio/g722":
 			audioPipe += " clock-rate=8000 ! rtpg722depay ! decodebin ! autoaudiosink"
 		default:
@@ -90,14 +91,14 @@ func CreateClientPipeline(audioTrack *webrtc.TrackRemote, videoTrack *webrtc.Tra
 	}
 
 	if videoTrack != nil {
-		videoPipe := fmt.Sprintf("appsrc format=time is-live=true do-timestamp=true name=%s ! application/x-rtp", videoTrack.ID())
-		switch videoTrack.Codec().MimeType {
-		case "vp8":
+		videoPipe := fmt.Sprintf("appsrc format=time is-live=true name=%s ! application/x-rtp, payload=%d", videoTrack.ID(), videoTrack.Codec().PayloadType)
+		switch strings.ToLower(videoTrack.Codec().MimeType) {
+		case "video/vp8":
 			videoPipe += ", encoding-name=VP8-DRAFT-IETF-01 ! rtpvp8depay ! decodebin ! autovideosink"
-		case "vp9":
+		case "viode/vp9":
 			videoPipe += " ! rtpvp9depay ! decodebin ! autovideosink"
-		case "h264":
-			videoPipe += " ! rtph264depay ! decodebin ! autovideosink"
+		case "video/h264":
+			videoPipe += " ! rtph264depay ! h264parse config-interval=-1 ! vtdec ! glimagesink sync=false "
 		default:
 			panic(fmt.Sprintf("couldn't build gst pipeline for codec: %s ", videoTrack.Codec().MimeType))
 		}
@@ -183,7 +184,7 @@ func (p *Pipeline) Push(buffer []byte, inputElement string) {
 	b := C.CBytes(buffer)
 	defer C.free(b)
 	inputElementUnsafe := C.CString(inputElement)
-	defer C.free(unsafe.Pointer(&inputElementUnsafe))
+	// defer C.free(unsafe.Pointer(&inputElementUnsafe))
 	C.gstreamer_receive_push_buffer(p.Pipeline, b, C.int(len(buffer)), inputElementUnsafe)
 }
 
