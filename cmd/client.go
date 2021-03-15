@@ -12,6 +12,7 @@ import (
 	"github.com/pion/webrtc/v3"
 
 	"github.com/pion/ion-cluster/pkg/client"
+	"github.com/pion/ion-cluster/pkg/client/gst"
 	log "github.com/pion/ion-log"
 	"github.com/spf13/cobra"
 )
@@ -71,6 +72,24 @@ func clientMain(cmd *cobra.Command, args []string) error {
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver) {
 		log.Debugf("Client got track!!!!")
+
+		var videoTrack, audioTrack *webrtc.TrackRemote
+		switch t.Kind() {
+		case webrtc.RTPCodecTypeVideo:
+			videoTrack = t
+		case webrtc.RTPCodecTypeAudio:
+			audioTrack = t
+		}
+		pipeline := gst.CreateClientPipeline(audioTrack, videoTrack)
+		pipeline.Start()
+		buf := make([]byte, 1400)
+		for {
+			i, _, readErr := t.Read(buf)
+			if readErr != nil {
+				panic(err)
+			}
+			pipeline.Push(buf[:i], t.ID())
+		}
 	}
 
 	if err := c.Join(clientSID); err != nil {
@@ -83,7 +102,7 @@ func clientMain(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		producer = client.NewGSTProducer(c, "screen", args[0])
 	} else {
-		producer = client.NewGSTProducer(c, "video", "")
+		// producer = client.NewGSTProducer(c, "video", "")
 	}
 
 	log.Debugf("publishing tracks")

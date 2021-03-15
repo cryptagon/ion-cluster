@@ -25,9 +25,12 @@ func init() {
 
 // Pipeline is a wrapper for a GStreamer Pipeline
 type Pipeline struct {
-	Pipeline   *C.GstElement
-	audioTrack *webrtc.TrackLocalStaticSample
-	videoTrack *webrtc.TrackLocalStaticSample
+	Pipeline      *C.GstElement
+	outAudioTrack *webrtc.TrackLocalStaticSample
+	outVideoTrack *webrtc.TrackLocalStaticSample
+
+	inAudioTrack *webrtc.TrackRemote
+	inVideoTrack *webrtc.TrackRemote
 }
 
 var pipeline = &Pipeline{}
@@ -63,9 +66,53 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.TrackLo
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
 	pipeline = &Pipeline{
-		Pipeline:   C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
-		audioTrack: audioTrack,
-		videoTrack: videoTrack,
+		Pipeline:      C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
+		outAudioTrack: audioTrack,
+		outVideoTrack: videoTrack,
+	}
+	return pipeline
+}
+
+// CreateClientPipeline creates a GStreamer Pipeline that decodes and shows video
+func CreateClientPipeline(audioTrack *webrtc.TrackRemote, videoTrack *webrtc.TrackRemote) *Pipeline {
+	pipelineStr := ""
+	if audioTrack != nil {
+		audioPipe := fmt.Sprintf("appsrc format=time is-live=true do-timestamp=true name=%s ! application/x-rtp", audioTrack.ID())
+		switch audioTrack.Codec().MimeType {
+		case "audio/opus":
+			audioPipe += ", encoding-name=OPUS ! rtpopusdepay ! decodebin ! autoaudiosink"
+		case "audio/g722":
+			audioPipe += " clock-rate=8000 ! rtpg722depay ! decodebin ! autoaudiosink"
+		default:
+			panic(fmt.Sprintf("couldn't build gst pipeline for codec: %s ", audioTrack.Codec().MimeType))
+		}
+		pipelineStr += audioPipe + "\n"
+	}
+
+	if videoTrack != nil {
+		videoPipe := fmt.Sprintf("appsrc format=time is-live=true do-timestamp=true name=%s ! application/x-rtp", videoTrack.ID())
+		switch videoTrack.Codec().MimeType {
+		case "vp8":
+			videoPipe += ", encoding-name=VP8-DRAFT-IETF-01 ! rtpvp8depay ! decodebin ! autovideosink"
+		case "vp9":
+			videoPipe += " ! rtpvp9depay ! decodebin ! autovideosink"
+		case "h264":
+			videoPipe += " ! rtph264depay ! decodebin ! autovideosink"
+		default:
+			panic(fmt.Sprintf("couldn't build gst pipeline for codec: %s ", videoTrack.Codec().MimeType))
+		}
+		pipelineStr += videoPipe + "\n"
+	}
+
+	pipelineStrUnsafe := C.CString(pipelineStr)
+	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
+
+	pipelinesLock.Lock()
+	defer pipelinesLock.Unlock()
+	pipeline = &Pipeline{
+		Pipeline:     C.gstreamer_receive_create_pipeline(pipelineStrUnsafe),
+		inAudioTrack: audioTrack,
+		inVideoTrack: videoTrack,
 	}
 	return pipeline
 }
@@ -93,9 +140,9 @@ func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.TrackLocalStaticSample
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
 	pipeline = &Pipeline{
-		Pipeline:   C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
-		audioTrack: audioTrack,
-		videoTrack: videoTrack,
+		Pipeline:      C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
+		outAudioTrack: audioTrack,
+		outVideoTrack: videoTrack,
 	}
 	return pipeline
 }
@@ -104,7 +151,11 @@ func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.TrackLocalStaticSample
 func (p *Pipeline) Start() {
 	// This will signal to goHandlePipelineBuffer
 	// and provide a method for cancelling sends.
-	C.gstreamer_send_start_pipeline(p.Pipeline)
+	if p.outVideoTrack != nil || p.outAudioTrack != nil {
+		C.gstreamer_send_start_pipeline(p.Pipeline)
+	} else {
+		C.gstreamer_receive_start_pipeline(p.Pipeline)
+	}
 }
 
 // Play sets the pipeline to PLAYING
@@ -127,16 +178,25 @@ const (
 	audioClockRate = 48000
 )
 
+// Push pushes a buffer on the appsrc of the GStreamer Pipeline
+func (p *Pipeline) Push(buffer []byte, inputElement string) {
+	b := C.CBytes(buffer)
+	defer C.free(b)
+	inputElementUnsafe := C.CString(inputElement)
+	defer C.free(unsafe.Pointer(&inputElementUnsafe))
+	C.gstreamer_receive_push_buffer(p.Pipeline, b, C.int(len(buffer)), inputElementUnsafe)
+}
+
 //export goHandlePipelineBuffer
 func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.int, isVideo C.int) {
 	var track *webrtc.TrackLocalStaticSample
 
 	if isVideo == 1 {
 		// samples = uint32(videoClockRate * (float32(duration) / 1000000000))
-		track = pipeline.videoTrack
+		track = pipeline.outVideoTrack
 	} else {
 		// samples = uint32(audioClockRate * (float32(duration) / 1000000000))
-		track = pipeline.audioTrack
+		track = pipeline.outAudioTrack
 	}
 
 	goDuration := time.Duration(duration)

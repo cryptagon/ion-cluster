@@ -13,7 +13,7 @@ void gstreamer_send_start_mainloop(void) {
   g_main_loop_run(gstreamer_send_main_loop);
 }
 
-static gboolean gstreamer_send_bus_call(GstBus *bus, GstMessage *msg, gpointer data) {
+static gboolean gstreamer_bus_call(GstBus *bus, GstMessage *msg, gpointer data) {
   GstElement *pipeline = GST_ELEMENT(data);
 
   switch (GST_MESSAGE_TYPE(msg)) {
@@ -72,7 +72,7 @@ GstElement *gstreamer_send_create_pipeline(char *pipeline) {
 
 void gstreamer_send_start_pipeline(GstElement *pipeline) {
   GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
-  gst_bus_add_watch(bus, gstreamer_send_bus_call, pipeline);
+  gst_bus_add_watch(bus, gstreamer_bus_call, pipeline);
   gst_object_unref(bus);
 
   GstElement *audio = gst_bin_get_by_name(GST_BIN(pipeline), "audio"),
@@ -107,4 +107,33 @@ void gstreamer_send_seek(GstElement *pipeline, int64_t seek_pos) {
              GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
         g_print ("Seek failed!\n");
     }
+}
+
+GstElement *gstreamer_receive_create_pipeline(char *pipeline) {
+  gst_init(NULL, NULL);
+  GError *error = NULL;
+  return gst_parse_launch(pipeline, &error);
+}
+
+void gstreamer_receive_start_pipeline(GstElement *pipeline) {
+  GstBus *bus = gst_pipeline_get_bus(GST_PIPELINE(pipeline));
+  gst_bus_add_watch(bus, gstreamer_bus_call, NULL);
+  gst_object_unref(bus);
+
+  gst_element_set_state(pipeline, GST_STATE_PLAYING);
+}
+
+void gstreamer_receive_stop_pipeline(GstElement *pipeline) { 
+  gst_element_set_state(pipeline, GST_STATE_NULL); 
+}
+
+void gstreamer_receive_push_buffer(GstElement *pipeline, void *buffer, int len, char* element_name) {
+  GstElement *src = gst_bin_get_by_name(GST_BIN(pipeline), element_name);
+
+  if (src != NULL) {
+    gpointer p = g_memdup(buffer, len);
+    GstBuffer *buffer = gst_buffer_new_wrapped(p, len);
+    gst_app_src_push_buffer(GST_APP_SRC(src), buffer);
+    gst_object_unref(src);
+  }
 }

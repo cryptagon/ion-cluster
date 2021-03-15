@@ -17,4 +17,9 @@ void gstreamer_send_seek(GstElement *pipeline, int64_t seek_pos);
 
 void gstreamer_send_start_mainloop(void);
 
+GstElement *gstreamer_receive_create_pipeline(char *pipeline);
+void gstreamer_receive_start_pipeline(GstElement *pipeline);
+void gstreamer_receive_stop_pipeline(GstElement *pipeline); 
+void gstreamer_receive_push_buffer(GstElement *pipeline, void *buffer, int len, char* element_name);
+
 #endif
