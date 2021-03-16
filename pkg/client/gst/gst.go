@@ -16,6 +16,7 @@ import (
 	"time"
 	"unsafe"
 
+	log "github.com/pion/ion-log"
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
 )
@@ -34,7 +35,8 @@ type Pipeline struct {
 	inVideoTrack *webrtc.TrackRemote
 }
 
-var pipeline = &Pipeline{}
+// var pipeline = &Pipeline{}
+var boundTracks = make(map[string]*webrtc.TrackLocalStaticSample)
 var pipelinesLock sync.Mutex
 
 func getEncoderString() string {
@@ -42,6 +44,13 @@ func getEncoderString() string {
 		return "vtenc_h264 realtime=true allow-frame-reordering=false max-keyframe-interval=60 ! video/x-h264, profile=baseline ! h264parse config-interval=1"
 	}
 	return "x264enc bframes=0 speed-preset=ultrafast key-int-max=60 ! video/x-h264, profile=baseline ! h264parse config-interval=1"
+}
+
+func getDecoderString() string {
+	if runtime.GOOS == "darwin" {
+		return "vtdec"
+	}
+	return "avdec_h264"
 }
 
 // CreatePipeline creates a GStreamer Pipeline
@@ -52,21 +61,21 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.TrackLo
 			queue !
 			%s ! 
 			video/x-h264,stream-format=byte-stream,profile=baseline !
-			appsink name=video 
+			appsink name=%s
 		demux. ! 
 			queue ! 
 			audioconvert ! 
 			audioresample ! 
 			audio/x-raw,rate=48000,channels=2 !
-			opusenc ! appsink name=audio
-	`, containerPath, getEncoderString())
+			opusenc ! appsink name=%s
+	`, containerPath, getEncoderString(), videoTrack.ID(), audioTrack.ID())
 
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
 
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
-	pipeline = &Pipeline{
+	pipeline := &Pipeline{
 		Pipeline:      C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
 		outAudioTrack: audioTrack,
 		outVideoTrack: videoTrack,
@@ -98,7 +107,7 @@ func CreateClientPipeline(audioTrack *webrtc.TrackRemote, videoTrack *webrtc.Tra
 		case "viode/vp9":
 			videoPipe += " ! rtpvp9depay ! decodebin ! autovideosink"
 		case "video/h264":
-			videoPipe += " ! rtph264depay ! h264parse config-interval=-1 ! vtdec ! glimagesink sync=false "
+			videoPipe += fmt.Sprintf(" ! rtph264depay ! h264parse config-interval=-1 ! %s ! glimagesink sync=false", getDecoderString())
 		default:
 			panic(fmt.Sprintf("couldn't build gst pipeline for codec: %s ", videoTrack.Codec().MimeType))
 		}
@@ -110,7 +119,7 @@ func CreateClientPipeline(audioTrack *webrtc.TrackRemote, videoTrack *webrtc.Tra
 
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
-	pipeline = &Pipeline{
+	pipeline := &Pipeline{
 		Pipeline:     C.gstreamer_receive_create_pipeline(pipelineStrUnsafe),
 		inAudioTrack: audioTrack,
 		inVideoTrack: videoTrack,
@@ -126,21 +135,21 @@ func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.TrackLocalStaticSample
 			queue !
 			%s ! 
 			video/x-h264,stream-format=byte-stream,profile=baseline !
-			appsink name=video 
+			appsink name=%s 
 		audiotestsrc wave=6 ! 
 			queue ! 
 			audioconvert ! 
 			audioresample ! 
 			audio/x-raw,rate=48000,channels=2 !
-			opusenc ! appsink name=audio
-	`, getEncoderString())
+			opusenc ! appsink name=%s
+	`, getEncoderString(), videoTrack.ID(), audioTrack.ID())
 
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
 
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
-	pipeline = &Pipeline{
+	pipeline := &Pipeline{
 		Pipeline:      C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
 		outAudioTrack: audioTrack,
 		outVideoTrack: videoTrack,
@@ -152,11 +161,25 @@ func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.TrackLocalStaticSample
 func (p *Pipeline) Start() {
 	// This will signal to goHandlePipelineBuffer
 	// and provide a method for cancelling sends.
-	if p.outVideoTrack != nil || p.outAudioTrack != nil {
-		C.gstreamer_send_start_pipeline(p.Pipeline)
-	} else {
-		C.gstreamer_receive_start_pipeline(p.Pipeline)
+	if p.outVideoTrack != nil {
+		log.Debugf("binding appsink to outVideoTrack")
+		trackIdUnsafe := C.CString(p.outVideoTrack.ID())
+
+		boundTracks[p.outVideoTrack.ID()] = p.outVideoTrack
+		// defer C.free(unsafe.Pointer(trackIdUnsafe))
+		C.gstreamer_send_bind_appsink_track(p.Pipeline, trackIdUnsafe, trackIdUnsafe)
 	}
+
+	if p.outAudioTrack != nil {
+		log.Debugf("binding appsink to outAudioTrack")
+		trackIdUnsafe := C.CString(p.outAudioTrack.ID())
+		// defer C.free(unsafe.Pointer(trackIdUnsafe))
+
+		boundTracks[p.outAudioTrack.ID()] = p.outAudioTrack
+		C.gstreamer_send_bind_appsink_track(p.Pipeline, trackIdUnsafe, trackIdUnsafe)
+	}
+
+	C.gstreamer_receive_start_pipeline(p.Pipeline)
 }
 
 // Play sets the pipeline to PLAYING
@@ -189,20 +212,15 @@ func (p *Pipeline) Push(buffer []byte, inputElement string) {
 }
 
 //export goHandlePipelineBuffer
-func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.int, isVideo C.int) {
-	var track *webrtc.TrackLocalStaticSample
+func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.int, localTrackID *C.char) {
+	// log.Debugf("localtrack: %v", C.GoString(localTrackID))
 
-	if isVideo == 1 {
-		// samples = uint32(videoClockRate * (float32(duration) / 1000000000))
-		track = pipeline.outVideoTrack
-	} else {
-		// samples = uint32(audioClockRate * (float32(duration) / 1000000000))
-		track = pipeline.outAudioTrack
-	}
-
+	var track *webrtc.TrackLocalStaticSample = boundTracks[C.GoString(localTrackID)]
 	goDuration := time.Duration(duration)
-	// log.Debugf("writing buffer: duration=%v", duration)
-
+	if track == nil {
+		log.Errorf("nil track: %v ", C.GoString(localTrackID))
+		return
+	}
 	if err := track.WriteSample(media.Sample{Data: C.GoBytes(buffer, bufferLen), Duration: goDuration}); err != nil && err != io.ErrClosedPipe {
 		panic(err)
 	}

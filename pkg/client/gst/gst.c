@@ -49,14 +49,13 @@ GstFlowReturn gstreamer_send_new_sample_handler(GstElement *object, gpointer use
   GstBuffer *buffer = NULL;
   gpointer copy = NULL;
   gsize copy_size = 0;
-  int *isVideo = (int *) user_data;
 
   g_signal_emit_by_name (object, "pull-sample", &sample);
   if (sample) {
     buffer = gst_sample_get_buffer(sample);
     if (buffer) {
       gst_buffer_extract_dup(buffer, 0, gst_buffer_get_size(buffer), &copy, &copy_size);
-      goHandlePipelineBuffer(copy, copy_size, GST_BUFFER_DURATION(buffer), *isVideo);
+      goHandlePipelineBuffer(copy, copy_size, GST_BUFFER_DURATION(buffer), user_data);
     }
     gst_sample_unref (sample);
   }
@@ -75,22 +74,14 @@ void gstreamer_send_start_pipeline(GstElement *pipeline) {
   gst_bus_add_watch(bus, gstreamer_bus_call, pipeline);
   gst_object_unref(bus);
 
-  GstElement *audio = gst_bin_get_by_name(GST_BIN(pipeline), "audio"),
-             *video = gst_bin_get_by_name(GST_BIN(pipeline), "video");
-
-  int *isAudio = malloc(sizeof(int)),
-      *isVideo = malloc(sizeof(int));
-
-  *isVideo = 1;
-  *isAudio = 0;
-
-  g_object_set(audio, "emit-signals", TRUE, NULL);
-  g_signal_connect(audio, "new-sample", G_CALLBACK(gstreamer_send_new_sample_handler), isAudio);
-
-  g_object_set(video, "emit-signals", TRUE, NULL);
-  g_signal_connect(video, "new-sample", G_CALLBACK(gstreamer_send_new_sample_handler), isVideo);
-
   gstreamer_send_play_pipeline(pipeline);
+}
+
+
+void gstreamer_send_bind_appsink_track(GstElement *pipeline, char *appSinkName, char *localTrackID) {
+  GstElement *appsink = gst_bin_get_by_name(GST_BIN(pipeline), appSinkName);
+  g_object_set(appsink, "emit-signals", TRUE, NULL); 
+  g_signal_connect(appsink, "new-sample", G_CALLBACK(gstreamer_send_new_sample_handler), localTrackID); 
 }
 
 void gstreamer_send_play_pipeline(GstElement *pipeline) {

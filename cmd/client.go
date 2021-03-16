@@ -75,7 +75,7 @@ func clientThread(cmd *cobra.Command, args []string) error {
 	}
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver) {
-		log.Debugf("Client got track!!!!")
+		log.Debugf("Client got track: %#v", t)
 
 		go func() {
 			var videoTrack, audioTrack *webrtc.TrackRemote
@@ -108,9 +108,12 @@ func clientThread(cmd *cobra.Command, args []string) error {
 
 	var producer *client.GSTProducer
 	if len(args) > 0 {
-		producer = client.NewGSTProducer(c, "screen", args[0])
-	} else {
-		// producer = client.NewGSTProducer(c, "video", "")
+		switch args[0] {
+		case "test":
+			producer = client.NewGSTProducer(c, "video", "")
+		default:
+			producer = client.NewGSTProducer(c, "screen", args[0])
+		}
 	}
 
 	if producer != nil {
