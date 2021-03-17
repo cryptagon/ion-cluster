@@ -10,11 +10,13 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
 require (
 	cloud.google.com/go v0.77.0 // indirect
+	github.com/billylindeman/go-gstreamer v0.0.0-20190228011546-d389bbd2a62d // indirect
 	github.com/coreos/etcd v3.3.25+incompatible
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/envoyproxy/go-control-plane v0.9.4 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
+	github.com/gotk3/gotk3 v0.5.2 // indirect
 	github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c
 	github.com/lucsky/cuid v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0

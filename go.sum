@@ -76,6 +76,8 @@ github.com/beorn7/perks v1.0.1/go.mod h1:G2ZrVWU2WbWT9wwq4/hrbKbnv/1ERSJQ0ibhJ6r
 github.com/bep/debounce v1.2.0 h1:wXds8Kq8qRfwAOpAxHrJDbCXgC5aHSzgQb/0gKsHQqo=
 github.com/bep/debounce v1.2.0/go.mod h1:H8yggRPQKLUhUoqrJC1bO2xNya7vanpDl7xR3ISbCJ0=
 github.com/bgentry/speakeasy v0.1.0/go.mod h1:+zsyZBPWlz7T6j88CTgSN5bM796AkVf0kBD4zp0CCIs=
+github.com/billylindeman/go-gstreamer v0.0.0-20190228011546-d389bbd2a62d h1:X1YnU0FVV4atUzsXLfeEL2m4RM30bxZU0XEegtxixZk=
+github.com/billylindeman/go-gstreamer v0.0.0-20190228011546-d389bbd2a62d/go.mod h1:02y6ks5AJ1TrVlwF2opjYML2wz5ECMfkBREeKtJAGxs=
 github.com/billylindeman/ion-sfu v1.0.3 h1:rAHHFAJNLBFvhRND2LR7qrlpV0WZ+L3rHZTXkJjhzEs=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201207210001-f4b409a7d0f8 h1:kwLAUN0fU58SrWx5sUV1NlfktbsNJ7vG8yuJ1oA/Zik=
 github.com/billylindeman/ion-sfu v1.0.4-0.20201207210001-f4b409a7d0f8/go.mod h1:myp3DIwptKEBeVKn0i0nQpr1DMMEtfaqs+8MzA/Ev2Q=
@@ -252,6 +254,8 @@ github.com/gorilla/websocket v0.0.0-20170926233335-4201258b820c/go.mod h1:E7qHFY
 github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/gotk3/gotk3 v0.5.2 h1:jbSFvUNMfo3ImM6BWBAkNUxY5piqP3eTc1YFbYy9ecU=
+github.com/gotk3/gotk3 v0.5.2/go.mod h1:/hqFpkNa9T3JgNAE2fLvCdov7c5bw//FHNZrZ3Uv9/Q=
 github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.0/go.mod h1:FiyG127CGDf3tlThmgyCl78X/SZQqEOJBCDaAfeWzPs=
 github.com/grpc-ecosystem/go-grpc-middleware v1.0.1-0.20190118093823-f849b5445de4 h1:z53tR0945TRRQO/fLEVPI6SMv7ZflF0TEaTAoU7tOzg=

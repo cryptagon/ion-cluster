@@ -22,14 +22,12 @@ import (
 )
 
 func MainLoop() {
-	C.gstreamer_send_start_mainloop()
+	C.gstreamer_start_mainloop()
 }
 
 // Pipeline is a wrapper for a GStreamer Pipeline
 type Pipeline struct {
-	Pipeline      *C.GstElement
-	outAudioTrack *webrtc.TrackLocalStaticSample
-	outVideoTrack *webrtc.TrackLocalStaticSample
+	Pipeline *C.GstElement
 
 	inAudioTrack *webrtc.TrackRemote
 	inVideoTrack *webrtc.TrackRemote
@@ -53,8 +51,20 @@ func getDecoderString() string {
 	return "avdec_h264"
 }
 
-// CreatePipeline creates a GStreamer Pipeline
-func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.TrackLocalStaticSample) *Pipeline {
+func CreatePipeline(pipelineStr string) *Pipeline {
+	pipelineStrUnsafe := C.CString(pipelineStr)
+	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
+
+	pipelinesLock.Lock()
+	defer pipelinesLock.Unlock()
+	pipeline := &Pipeline{
+		Pipeline: C.gstreamer_create_pipeline(pipelineStrUnsafe),
+	}
+	return pipeline
+}
+
+// CreatePlayerPipeline creates a GStreamer Pipeline
+func CreatePlayerPipeline(containerPath string, audioTrack, videoTrack *webrtc.TrackLocalStaticSample) *Pipeline {
 	pipelineStr := fmt.Sprintf(`
 		filesrc location="%s" !
 		decodebin name=demux !
@@ -76,9 +86,7 @@ func CreatePipeline(containerPath string, audioTrack, videoTrack *webrtc.TrackLo
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
 	pipeline := &Pipeline{
-		Pipeline:      C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
-		outAudioTrack: audioTrack,
-		outVideoTrack: videoTrack,
+		Pipeline: C.gstreamer_create_pipeline(pipelineStrUnsafe),
 	}
 	return pipeline
 }
@@ -120,7 +128,7 @@ func CreateClientPipeline(audioTrack *webrtc.TrackRemote, videoTrack *webrtc.Tra
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
 	pipeline := &Pipeline{
-		Pipeline:     C.gstreamer_receive_create_pipeline(pipelineStrUnsafe),
+		Pipeline:     C.gstreamer_create_pipeline(pipelineStrUnsafe),
 		inAudioTrack: audioTrack,
 		inVideoTrack: videoTrack,
 	}
@@ -150,51 +158,38 @@ func CreateTestSrcPipeline(audioTrack, videoTrack *webrtc.TrackLocalStaticSample
 	pipelinesLock.Lock()
 	defer pipelinesLock.Unlock()
 	pipeline := &Pipeline{
-		Pipeline:      C.gstreamer_send_create_pipeline(pipelineStrUnsafe),
-		outAudioTrack: audioTrack,
-		outVideoTrack: videoTrack,
+		Pipeline: C.gstreamer_create_pipeline(pipelineStrUnsafe),
 	}
 	return pipeline
+}
+
+func (p *Pipeline) BindAppsinkToTrack(t *webrtc.TrackLocalStaticSample) {
+	log.Debugf("binding appsink to track: %v", t.ID())
+	trackIdUnsafe := C.CString(t.ID())
+	boundTracks[t.ID()] = t
+	C.gstreamer_send_bind_appsink_track(p.Pipeline, trackIdUnsafe, trackIdUnsafe)
 }
 
 // Start starts the GStreamer Pipeline
 func (p *Pipeline) Start() {
 	// This will signal to goHandlePipelineBuffer
 	// and provide a method for cancelling sends.
-	if p.outVideoTrack != nil {
-		log.Debugf("binding appsink to outVideoTrack")
-		trackIdUnsafe := C.CString(p.outVideoTrack.ID())
-
-		boundTracks[p.outVideoTrack.ID()] = p.outVideoTrack
-		// defer C.free(unsafe.Pointer(trackIdUnsafe))
-		C.gstreamer_send_bind_appsink_track(p.Pipeline, trackIdUnsafe, trackIdUnsafe)
-	}
-
-	if p.outAudioTrack != nil {
-		log.Debugf("binding appsink to outAudioTrack")
-		trackIdUnsafe := C.CString(p.outAudioTrack.ID())
-		// defer C.free(unsafe.Pointer(trackIdUnsafe))
-
-		boundTracks[p.outAudioTrack.ID()] = p.outAudioTrack
-		C.gstreamer_send_bind_appsink_track(p.Pipeline, trackIdUnsafe, trackIdUnsafe)
-	}
-
-	C.gstreamer_receive_start_pipeline(p.Pipeline)
+	C.gstreamer_start_pipeline(p.Pipeline)
 }
 
 // Play sets the pipeline to PLAYING
 func (p *Pipeline) Play() {
-	C.gstreamer_send_play_pipeline(p.Pipeline)
+	C.gstreamer_play_pipeline(p.Pipeline)
 }
 
 // Pause sets the pipeline to PAUSED
 func (p *Pipeline) Pause() {
-	C.gstreamer_send_pause_pipeline(p.Pipeline)
+	C.gstreamer_pause_pipeline(p.Pipeline)
 }
 
 // SeekToTime seeks on the pipeline
 func (p *Pipeline) SeekToTime(seekPos int64) {
-	C.gstreamer_send_seek(p.Pipeline, C.int64_t(seekPos))
+	C.gstreamer_seek(p.Pipeline, C.int64_t(seekPos))
 }
 
 const (
@@ -203,10 +198,10 @@ const (
 )
 
 // Push pushes a buffer on the appsrc of the GStreamer Pipeline
-func (p *Pipeline) Push(buffer []byte, inputElement string) {
+func (p *Pipeline) Push(buffer []byte, appsrc string) {
 	b := C.CBytes(buffer)
 	defer C.free(b)
-	inputElementUnsafe := C.CString(inputElement)
+	inputElementUnsafe := C.CString(appsrc)
 	// defer C.free(unsafe.Pointer(&inputElementUnsafe))
 	C.gstreamer_receive_push_buffer(p.Pipeline, b, C.int(len(buffer)), inputElementUnsafe)
 }
@@ -214,7 +209,6 @@ func (p *Pipeline) Push(buffer []byte, inputElement string) {
 //export goHandlePipelineBuffer
 func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.int, localTrackID *C.char) {
 	// log.Debugf("localtrack: %v", C.GoString(localTrackID))
-
 	var track *webrtc.TrackLocalStaticSample = boundTracks[C.GoString(localTrackID)]
 	goDuration := time.Duration(duration)
 	if track == nil {

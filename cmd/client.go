@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -36,7 +35,6 @@ func init() {
 	clientCmd.PersistentFlags().StringVarP(&clientToken, "token", "t", "", "jwt access token")
 
 	rootCmd.AddCommand(clientCmd)
-	runtime.LockOSThread()
 }
 
 func endpoint() string {
