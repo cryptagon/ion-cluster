@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"sync"
 	"unsafe"
 
 	log "github.com/pion/ion-log"
@@ -19,6 +20,7 @@ import (
 
 // CompositorPipeline will decode incoming tracks in a single pipeline and compose the streams
 type CompositorPipeline struct {
+	mu       sync.Mutex
 	Pipeline *C.GstElement
 
 	trackBins map[string]*C.GstElement
@@ -42,6 +44,9 @@ func NewCompositorPipeline(pipelineStr string) *CompositorPipeline {
 }
 
 func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	inputBin := fmt.Sprintf("appsrc format=time is-live=true do-timestamp=true name=%s ! application/x-rtp ", t.ID())
 
 	switch strings.ToLower(t.Codec().MimeType) {
@@ -70,7 +75,14 @@ func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
 }
 
 func (c *CompositorPipeline) Play() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	C.gstreamer_play_pipeline(c.Pipeline)
+}
+
+func (c *CompositorPipeline) Stop() {
+	C.gstreamer_stop_pipeline(c.Pipeline)
 }
 
 func (c *CompositorPipeline) destroy() {

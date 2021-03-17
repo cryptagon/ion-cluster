@@ -63,9 +63,9 @@ func relayThread(cmd *cobra.Command, args []string) error {
 	rtmpString := ""
 	if len(args) > 0 {
 		rtmpString = fmt.Sprintf(`
-			flvmux name=mux ! rtmpsink location=%s sync=false
-				vtee. ! vtenc_h264 ! mux.
-				atee. ! faac ! mux.
+			qtmux name=mux ! queue ! filesink location=%s sync=false async=false
+				vtee. ! queue ! vtenc_h264 ! mux.
+				atee. ! queue ! faac ! mux.
 		`, args[0])
 		log.Debugf("Starting broadcast to url: %s", args[0])
 	} else {
@@ -73,7 +73,7 @@ func relayThread(cmd *cobra.Command, args []string) error {
 	}
 
 	compositor := gst.NewCompositorPipeline(`
-		compositor name=vmix ! queue ! tee name=vtee 
+		compositor name=vmix ! video/x-raw,width=1920,height=1080,framerate=30/1 ! queue ! tee name=vtee 
 			vtee. ! queue ! glimagesink sync=false 
 		audiomixer name=amix ! queue ! tee name=atee 
 			atee. ! queue ! audioconvert ! autoaudiosink
@@ -139,7 +139,7 @@ func relayThread(cmd *cobra.Command, args []string) error {
 			signal.Close()
 		case <-signalClosedCh:
 			log.Debugf("signal closed")
-			os.Exit(1)
+			compositor.Stop()
 			return nil
 		}
 	}

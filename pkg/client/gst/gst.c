@@ -17,12 +17,15 @@ static gboolean gstreamer_bus_call(GstBus *bus, GstMessage *msg, gpointer data) 
 
   switch (GST_MESSAGE_TYPE(msg)) {
   case GST_MESSAGE_EOS:
-    if (!gst_element_seek (pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_SKIP,
-             GST_SEEK_TYPE_SET, 0,
-             GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
-        g_print ("EOS restart failed\n");
-        exit(1);
-    }
+    g_print ("End of stream\n");
+    exit(1);
+
+    // if (!gst_element_seek (pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_SKIP,
+    //          GST_SEEK_TYPE_SET, 0,
+    //          GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE)) {
+    //     g_print ("EOS restart failed\n");
+    //     exit(1);
+    // }
     break;
 
   case GST_MESSAGE_ERROR: {
@@ -58,7 +61,10 @@ void gstreamer_start_pipeline(GstElement *pipeline) {
 }
 
 void gstreamer_stop_pipeline(GstElement *pipeline) { 
-  gst_element_set_state(pipeline, GST_STATE_NULL); 
+  GstEvent *eos = gst_event_new_eos();
+  gst_element_send_event(pipeline, eos);
+
+  // gst_element_set_state(pipeline, GST_STATE_NULL); 
   // gst_element_get_state(pipeline, NULL, NULL, GST_CLOCK_TIME_NONE);
 }
 
@@ -145,8 +151,6 @@ GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *inp
   return input_bin;
 }
 
-
-
 #define COMPOSITOR_VIDEO_WIDTH 1920 
 #define COMPOSITOR_VIDEO_HEIGHT 1080
 
@@ -158,6 +162,8 @@ void gstreamer_compositor_relayout_videos(GstElement *compositor) {
     rows = 1, cols = 1;
   }else if (num_videos <= 4) {
     rows = 2, cols = 2; 
+  }else if (num_videos <= 12) {
+    rows = 3, cols = 3;
   }else if (num_videos <= 16) {
     rows = 4, cols = 4; 
   }
@@ -166,8 +172,8 @@ void gstreamer_compositor_relayout_videos(GstElement *compositor) {
   g_print("relayout: num_videos: %d ==> %d, %d\n", num_videos, rows, cols);
 
   int x = 0, y = 0;
-  int w = COMPOSITOR_VIDEO_WIDTH / rows;
-  int h = COMPOSITOR_VIDEO_HEIGHT / cols;
+  int w = COMPOSITOR_VIDEO_WIDTH / cols;
+  int h = COMPOSITOR_VIDEO_HEIGHT / rows;
 
   GList *elem;
   GstPad *pad;
