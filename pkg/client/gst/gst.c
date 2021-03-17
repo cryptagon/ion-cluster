@@ -15,10 +15,12 @@ void gstreamer_start_mainloop(void) {
 static gboolean gstreamer_bus_call(GstBus *bus, GstMessage *msg, gpointer data) {
   GstElement *pipeline = GST_ELEMENT(data);
 
+
+
   switch (GST_MESSAGE_TYPE(msg)) {
   case GST_MESSAGE_EOS:
     g_print ("End of stream\n");
-    exit(1);
+    g_main_loop_quit (gstreamer_main_loop);
 
     // if (!gst_element_seek (pipeline, 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT | GST_SEEK_FLAG_SKIP,
     //          GST_SEEK_TYPE_SET, 0,
@@ -147,15 +149,39 @@ GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *inp
     gst_object_unref(mixer);
   }
 
-
   return input_bin;
+}
+
+void gstreamer_compositor_remove_input_track(GstElement *pipeline, GstElement *input_bin, bool isVideo) {
+  GstElement *mixer;
+
+  if (isVideo) {
+    g_print("removing input from video compositor\n");
+    mixer = gst_bin_get_by_name(GST_BIN(pipeline), "vmix"); 
+    if(!mixer) g_printerr("no video compositor found!");
+  } else {
+    g_print("removing input from audio mixer\n");
+    mixer = gst_bin_get_by_name(GST_BIN(pipeline), "amix");
+    if(!mixer) g_printerr("no audio mixer found!");
+  }
+
+  GstPad *srcpad = gst_element_get_static_pad(input_bin, "src");
+  GstPad *sinkpad = srcpad->peer; 
+
+  gst_pad_unlink(srcpad, sinkpad);
+  gst_element_release_request_pad(mixer, sinkpad);
+
+  if(isVideo) gstreamer_compositor_relayout_videos(mixer);
+
+  gst_object_unref(mixer);
+  gst_object_unref(srcpad);
 }
 
 #define COMPOSITOR_VIDEO_WIDTH 1920 
 #define COMPOSITOR_VIDEO_HEIGHT 1080
 
 void gstreamer_compositor_relayout_videos(GstElement *compositor) {
-  int num_videos = (compositor->numsinkpads) - 1;
+  int num_videos = (compositor->numsinkpads);
 
   int rows, cols;
   if (num_videos <= 1) {

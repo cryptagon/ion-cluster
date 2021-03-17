@@ -98,7 +98,9 @@ func (c *CompositorPipeline) bindTrackToAppsrc(t *webrtc.TrackRemote) {
 		if readErr != nil {
 			log.Warnf("end of track %v: TODO CLEAN UP GST PIPELINE", t.ID())
 
-			// C.gstreamer_compositor_remove_input_track(c.Pipeline)
+			trackBin := c.trackBins[t.ID()]
+			C.gstreamer_compositor_remove_input_track(c.Pipeline, trackBin, C.bool(t.Kind() == webrtc.RTPCodecTypeVideo))
+			delete(c.trackBins, t.ID())
 			// panic(readErr)
 			return
 		}

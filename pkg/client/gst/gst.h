@@ -26,6 +26,6 @@ void gstreamer_receive_push_buffer(GstElement *pipeline, void *buffer, int len, 
 
 // Helpers for the compositor_pipeline
 GstElement *gstreamer_compositor_add_input_track(GstElement *pipeline, char *input_description, bool isVideo);
+void gstreamer_compositor_remove_input_track(GstElement *pipeline, GstElement *input_bin, bool isVideo); 
 void gstreamer_compositor_relayout_videos(GstElement *compositor); 
-
 #endif
