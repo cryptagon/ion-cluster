@@ -60,7 +60,7 @@ func relayThread(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	compositor := gst.NewCompositor()
+	compositor := gst.NewCompositorPipeline(`compositor name=vmix ! queue ! glimagesink sync=false audiomixer name=amix ! audioconvert ! autoaudiosin`)
 	compositor.Play()
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {

@@ -24,9 +24,9 @@ type CompositorPipeline struct {
 	trackBins map[string]*C.GstElement
 }
 
-// NewCompositor will create a new producer for a given client and a videoFile
-func NewCompositor() *CompositorPipeline {
-	pipelineStr := fmt.Sprintf(`compositor name=vmix ! queue ! glimagesink sync=false audiomixer name=amix ! audioconvert ! autoaudiosink`)
+// NewCompositorPipeline will create a pipeline controller from the string. It _must_ contain a compositor named vmix, and an audiomixer named amix
+func NewCompositorPipeline(pipelineStr string) *CompositorPipeline {
+	// pipelineStr := fmt.Sprintf(`compositor name=vmix ! queue ! glimagesink sync=false audiomixer name=amix ! audioconvert ! autoaudiosink`)
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
 
