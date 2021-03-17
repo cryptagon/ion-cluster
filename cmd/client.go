@@ -72,7 +72,7 @@ func clientThread(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver) {
+	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {
 		log.Debugf("Client got track: %#v", t)
 
 		go func() {

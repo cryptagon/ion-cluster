@@ -9,6 +9,7 @@ package gst
 import "C"
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"unsafe"
 
@@ -33,9 +34,9 @@ func NewCompositor() *CompositorPipeline {
 		Pipeline:  C.gstreamer_create_pipeline(pipelineStrUnsafe),
 		trackBins: make(map[string]*C.GstElement),
 	}
-	// runtime.SetFinalizer(c, func(c *CompositorPipeline) {
-	// 	// c.destroy()
-	// })
+	runtime.SetFinalizer(c, func(c *CompositorPipeline) {
+		c.destroy()
+	})
 	C.gstreamer_start_pipeline(c.Pipeline)
 	return c
 }
@@ -84,7 +85,10 @@ func (c *CompositorPipeline) bindTrackToAppsrc(t *webrtc.TrackRemote) {
 		i, _, readErr := t.Read(buf)
 		if readErr != nil {
 			log.Warnf("end of track %v: TODO CLEAN UP GST PIPELINE", t.ID())
-			panic(readErr)
+
+			// C.gstreamer_compositor_remove_input_track(c.Pipeline)
+			// panic(readErr)
+			return
 		}
 		c.pushAppsrc(buf[:i], t.ID())
 	}
