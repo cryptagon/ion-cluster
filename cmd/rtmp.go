@@ -60,7 +60,24 @@ func relayThread(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	compositor := gst.NewCompositorPipeline(`compositor name=vmix ! queue ! glimagesink sync=false audiomixer name=amix ! audioconvert ! autoaudiosin`)
+	rtmpString := ""
+	if len(args) > 0 {
+		rtmpString = fmt.Sprintf(`
+			flvmux name=mux ! rtmpsink location=%s sync=false
+				vtee. ! vtenc_h264 ! mux.
+				atee. ! faac ! mux.
+		`, args[0])
+		log.Debugf("Starting broadcast to url: %s", args[0])
+	} else {
+		log.Debugf("No RTMP Url passed in, local compositing only")
+	}
+
+	compositor := gst.NewCompositorPipeline(`
+		compositor name=vmix ! queue ! tee name=vtee 
+			vtee. ! queue ! glimagesink sync=false 
+		audiomixer name=amix ! queue ! tee name=atee 
+			atee. ! queue ! audioconvert ! autoaudiosink
+		` + rtmpString)
 	compositor.Play()
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {
