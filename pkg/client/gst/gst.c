@@ -128,16 +128,16 @@ GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *inp
   if(isVideo) {
     g_print("adding input to compositor\n");
     GstElement *compositor = gst_bin_get_by_name(GST_BIN(pipeline), "vmix");
-    if(!compositor) g_printerr("no compositor found!");
+    if(!compositor) g_printerr("no video compositor found!");
     gst_element_link(input_bin, compositor);
-
     gstreamer_compositor_relayout_videos(compositor);
 
     gst_object_unref(compositor);
   }else {
     g_print("adding input to mixer\n");
     GstElement *mixer = gst_bin_get_by_name(GST_BIN(pipeline), "amix");
-    gst_element_link_many(input_bin, mixer, NULL);
+    if(!mixer) g_printerr("no audio mixer found!");
+    gst_element_link(input_bin, mixer);
     gst_object_unref(mixer);
   }
 

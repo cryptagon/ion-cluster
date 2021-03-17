@@ -26,7 +26,7 @@ type CompositorPipeline struct {
 
 // NewCompositor will create a new producer for a given client and a videoFile
 func NewCompositor() *CompositorPipeline {
-	pipelineStr := fmt.Sprintf(`compositor name=vmix ! queue ! glimagesink sync=false videotestsrc ! video/x-raw,width=1920,height=1080,format=UYVY ! vmix.`)
+	pipelineStr := fmt.Sprintf(`compositor name=vmix ! queue ! glimagesink sync=false audiomixer name=amix ! audioconvert ! autoaudiosink`)
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
 
@@ -46,7 +46,7 @@ func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
 
 	switch strings.ToLower(t.Codec().MimeType) {
 	case "audio/opus":
-		inputBin += ", encoding-name=OPUS, payload=96 ! rtpopusdepay ! queue ! decodebin "
+		inputBin += ", encoding-name=OPUS, payload=96 ! rtpopusdepay ! queue ! opusdec "
 	case "audio/g722":
 		inputBin += " clock-rate=8000 ! rtpg722depay ! decodebin "
 	case "video/vp8":
@@ -54,7 +54,7 @@ func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
 	case "viode/vp9":
 		inputBin += " ! rtpvp9depay ! decodebin "
 	case "video/h264":
-		inputBin += fmt.Sprintf(", payload=%d ! rtph264depay ! h264parse config-interval=1 ! queue ! %s !  queue ", t.PayloadType(), getDecoderString())
+		inputBin += fmt.Sprintf(", payload=%d ! rtph264depay ! queue ! %s !  queue ", t.PayloadType(), getDecoderString())
 	default:
 		panic(fmt.Sprintf("couldn't build gst pipeline for codec: %s ", t.Codec().MimeType))
 	}

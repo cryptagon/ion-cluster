@@ -45,9 +45,9 @@ func getEncoderString() string {
 }
 
 func getDecoderString() string {
-	if runtime.GOOS == "darwin" {
-		return "vtdec"
-	}
+	// if runtime.GOOS == "darwin" {
+	// return "vtdec"
+	// }
 	return "avdec_h264"
 }
 
