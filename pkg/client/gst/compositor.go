@@ -26,9 +26,14 @@ type CompositorPipeline struct {
 	trackBins map[string]*C.GstElement
 }
 
-// NewCompositorPipeline will create a pipeline controller from the string. It _must_ contain a compositor named vmix, and an audiomixer named amix
-func NewCompositorPipeline(pipelineStr string) *CompositorPipeline {
-	// pipelineStr := fmt.Sprintf(`compositor name=vmix ! queue ! glimagesink sync=false audiomixer name=amix ! audioconvert ! autoaudiosink`)
+// NewCompositorPipeline will create a pipeline controller for AV compositing.  It will include tee's (vtee,atee) for linking extra elements to the composited output using the extraPipelineStr
+func NewCompositorPipeline(extraPipelineStr string) *CompositorPipeline {
+	pipelineStr := `
+		compositor name=vmix background=black ! video/x-raw,width=1920,height=1080,framerate=30/1,format=UYVY ! queue ! tee name=vtee 
+			vtee. ! queue ! glimagesink sync=false 
+		audiomixer name=amix ! queue ! tee name=atee 
+			atee. ! queue ! audioconvert ! autoaudiosink
+	` + extraPipelineStr
 	pipelineStrUnsafe := C.CString(pipelineStr)
 	defer C.free(unsafe.Pointer(pipelineStrUnsafe))
 
@@ -59,7 +64,7 @@ func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
 	case "viode/vp9":
 		inputBin += " ! rtpvp9depay ! decodebin "
 	case "video/h264":
-		inputBin += fmt.Sprintf(", payload=%d ! rtph264depay ! queue ! %s !  queue ", t.PayloadType(), getDecoderString())
+		inputBin += fmt.Sprintf(", payload=%d ! rtph264depay ! queue ! %s !  videoconvert ! queue ", t.PayloadType(), getDecoderString())
 	default:
 		panic(fmt.Sprintf("couldn't build gst pipeline for codec: %s ", t.Codec().MimeType))
 	}

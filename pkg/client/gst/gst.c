@@ -171,6 +171,10 @@ void gstreamer_compositor_remove_input_track(GstElement *pipeline, GstElement *i
   gst_pad_unlink(srcpad, sinkpad);
   gst_element_release_request_pad(mixer, sinkpad);
 
+  gst_element_set_state(input_bin, GST_STATE_NULL); 
+  gst_bin_remove (GST_BIN (pipeline), input_bin);
+
+
   if(isVideo) gstreamer_compositor_relayout_videos(mixer);
 
   gst_object_unref(mixer);
