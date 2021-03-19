@@ -1,6 +1,7 @@
 #include "gst.h"
 
 #include <gst/app/gstappsrc.h>
+#include <gst/video/video.h>
 
 typedef struct SampleHandlerUserData {
   int pipelineId;
@@ -124,7 +125,27 @@ void gstreamer_receive_push_buffer(GstElement *pipeline, void *buffer, int len, 
   }
 }
 
-GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *input_description, bool isVideo) {
+
+// This pad probe will get triggered when UPSTREAM events get fired on the appsrc.  
+// We use this to listen for GstEventForceKeyUnit, and forward that to the go binding to request a PLI
+static GstPadProbeReturn gstreamer_input_track_event_pad_probe_cb(GstPad * pad, GstPadProbeInfo * info, gpointer user_data)
+{
+  GstEvent *event = GST_PAD_PROBE_INFO_EVENT(info);
+  g_print ("Got event: %s\n", GST_EVENT_TYPE_NAME (event));
+
+  switch (GST_EVENT_TYPE (event)) {
+    // case GST_EVENT_CUSTOM_DOWNSTREAM:
+    case GST_EVENT_CUSTOM_UPSTREAM:
+      if (gst_video_event_is_force_key_unit (event)) {
+        goHandleAppsrcForceKeyUnit()
+        g_print("got upstream forceKeyUnit for track");
+      }   
+  }
+
+  return GST_PAD_PROBE_OK;
+}
+
+GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *input_description, char *track_id, bool isVideo) {
   GstElement *input_bin = gst_parse_bin_from_description(input_description, true, NULL);
   if (!input_bin) {
     g_printerr ("Unable to create bin for input track\n");
@@ -139,6 +160,17 @@ GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *inp
     if(!compositor) g_printerr("no video compositor found!");
     gst_element_link(input_bin, compositor);
     gstreamer_compositor_relayout_videos(compositor);
+
+    //add upstream event pad probe to appsrc pad to listen for forceKeyUnit event's
+    GstElement *appsrc = gst_bin_get_by_name(GST_BIN(input_bin), track_id);
+    if(!appsrc) g_printerr("no appsrc found for track");
+    GstPad *srcpad = gst_element_get_static_pad(appsrc, "src");
+    if(!srcpad) g_printerr("no src pad found for track");
+    gst_pad_add_probe (srcpad,
+        GST_PAD_PROBE_TYPE_EVENT_UPSTREAM,
+        gstreamer_input_track_event_pad_probe_cb, NULL, NULL);
+    gst_object_unref(appsrc);
+    gst_object_unref(srcpad);
 
     gst_object_unref(compositor);
   }else {
@@ -198,7 +230,6 @@ void gstreamer_compositor_relayout_videos(GstElement *compositor) {
     rows = 4, cols = 4; 
   }
 
-
   g_print("relayout: num_videos: %d ==> %d, %d\n", num_videos, rows, cols);
 
   int x = 0, y = 0;
@@ -210,8 +241,8 @@ void gstreamer_compositor_relayout_videos(GstElement *compositor) {
 
   int i = 0;
   for(elem = compositor->sinkpads; elem; elem = elem->next) {
-    // if(i == 0) continue;
     pad = elem->data;
+
     g_object_set (G_OBJECT(pad), "xpos", x, NULL);
     g_object_set (G_OBJECT(pad), "ypos", y, NULL);
     g_object_set (G_OBJECT(pad), "width", w, NULL);

@@ -1,7 +1,7 @@
 package gst
 
 /*
-#cgo pkg-config: gstreamer-1.0 gstreamer-app-1.0
+#cgo pkg-config: gstreamer-1.0 gstreamer-app-1.0 gstreamer-video-1.0
 
 #include "gst.h"
 
@@ -72,9 +72,11 @@ func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
 	log.Debugf("adding input track with bin: %s", inputBin)
 	inputBinUnsafe := C.CString(inputBin)
 	// defer C.free(unsafe.Pointer(&inputBinUnsafe))
+	trackIdUnsafe := C.CString(t.ID())
+	// defer C.free(unsafe.Pointer(&trackIdUnsafe))
 
 	isVideo := t.Kind() == webrtc.RTPCodecTypeVideo
-	bin := C.gstreamer_compositor_add_input_track(c.Pipeline, inputBinUnsafe, C.bool(isVideo))
+	bin := C.gstreamer_compositor_add_input_track(c.Pipeline, inputBinUnsafe, trackIdUnsafe, C.bool(isVideo))
 	c.trackBins[t.ID()] = bin
 	go c.bindTrackToAppsrc(t)
 }
