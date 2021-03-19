@@ -131,16 +131,13 @@ void gstreamer_receive_push_buffer(GstElement *pipeline, void *buffer, int len, 
 static GstPadProbeReturn gstreamer_input_track_event_pad_probe_cb(GstPad * pad, GstPadProbeInfo * info, gpointer user_data)
 {
   GstEvent *event = GST_PAD_PROBE_INFO_EVENT(info);
-  g_print ("Got event: %s\n", GST_EVENT_TYPE_NAME (event));
-
-  switch (GST_EVENT_TYPE (event)) {
-    // case GST_EVENT_CUSTOM_DOWNSTREAM:
-    case GST_EVENT_CUSTOM_UPSTREAM:
-      if (gst_video_event_is_force_key_unit (event)) {
-        goHandleAppsrcForceKeyUnit()
-        g_print("got upstream forceKeyUnit for track");
-      }   
+  // g_print ("Got event: %s\n", GST_EVENT_TYPE_NAME (event));
+  if (GST_EVENT_TYPE(event) == GST_EVENT_CUSTOM_UPSTREAM  
+      && gst_video_event_is_force_key_unit (event)) {
+    g_print("pad_probe got upstream forceKeyUnit for track\n");
+    goHandleAppsrcForceKeyUnit((char *)user_data);
   }
+  
 
   return GST_PAD_PROBE_OK;
 }
@@ -157,18 +154,18 @@ GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *inp
   if(isVideo) {
     g_print("adding input to compositor\n");
     GstElement *compositor = gst_bin_get_by_name(GST_BIN(pipeline), "vmix");
-    if(!compositor) g_printerr("no video compositor found!");
+    if(!compositor) g_printerr("no video compositor found!\n");
     gst_element_link(input_bin, compositor);
     gstreamer_compositor_relayout_videos(compositor);
 
     //add upstream event pad probe to appsrc pad to listen for forceKeyUnit event's
     GstElement *appsrc = gst_bin_get_by_name(GST_BIN(input_bin), track_id);
-    if(!appsrc) g_printerr("no appsrc found for track");
+    if(!appsrc) g_printerr("no appsrc found for track\n");
     GstPad *srcpad = gst_element_get_static_pad(appsrc, "src");
-    if(!srcpad) g_printerr("no src pad found for track");
+    if(!srcpad) g_printerr("no src pad found for track\n");
     gst_pad_add_probe (srcpad,
         GST_PAD_PROBE_TYPE_EVENT_UPSTREAM,
-        gstreamer_input_track_event_pad_probe_cb, NULL, NULL);
+        gstreamer_input_track_event_pad_probe_cb, track_id, NULL);
     gst_object_unref(appsrc);
     gst_object_unref(srcpad);
 
@@ -176,7 +173,7 @@ GstElement* gstreamer_compositor_add_input_track(GstElement *pipeline, char *inp
   }else {
     g_print("adding input to mixer\n");
     GstElement *mixer = gst_bin_get_by_name(GST_BIN(pipeline), "amix");
-    if(!mixer) g_printerr("no audio mixer found!");
+    if(!mixer) g_printerr("no audio mixer found!\n");
     gst_element_link(input_bin, mixer);
     gst_object_unref(mixer);
   }

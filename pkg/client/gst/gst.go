@@ -33,8 +33,9 @@ type Pipeline struct {
 	inVideoTrack *webrtc.TrackRemote
 }
 
-// var pipeline = &Pipeline{}
 var boundTracks = make(map[string]*webrtc.TrackLocalStaticSample)
+var boundRemoteTrackKeyframeCallbacks = make(map[string]func())
+
 var pipelinesLock sync.Mutex
 
 func getEncoderString() string {

@@ -15,6 +15,7 @@ import (
 	"unsafe"
 
 	log "github.com/pion/ion-log"
+	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -23,7 +24,8 @@ type CompositorPipeline struct {
 	mu       sync.Mutex
 	Pipeline *C.GstElement
 
-	trackBins map[string]*C.GstElement
+	trackBins              map[string]*C.GstElement
+	trackKeyframeCallbacks map[string]func()
 }
 
 // NewCompositorPipeline will create a pipeline controller for AV compositing.  It will include tee's (vtee,atee) for linking extra elements to the composited output using the extraPipelineStr
@@ -48,7 +50,7 @@ func NewCompositorPipeline(extraPipelineStr string) *CompositorPipeline {
 	return c
 }
 
-func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
+func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote, pc *webrtc.PeerConnection) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -78,6 +80,16 @@ func (c *CompositorPipeline) AddInputTrack(t *webrtc.TrackRemote) {
 	isVideo := t.Kind() == webrtc.RTPCodecTypeVideo
 	bin := C.gstreamer_compositor_add_input_track(c.Pipeline, inputBinUnsafe, trackIdUnsafe, C.bool(isVideo))
 	c.trackBins[t.ID()] = bin
+
+	if t.Kind() == webrtc.RTPCodecTypeVideo {
+		boundRemoteTrackKeyframeCallbacks[t.ID()] = func() {
+			log.Debugf("sending pli for track %s", t.ID())
+			rtcpSendErr := pc.WriteRTCP([]rtcp.Packet{&rtcp.PictureLossIndication{MediaSSRC: uint32(t.SSRC())}})
+			if rtcpSendErr != nil {
+				fmt.Println(rtcpSendErr)
+			}
+		}
+	}
 	go c.bindTrackToAppsrc(t)
 }
 
@@ -108,6 +120,7 @@ func (c *CompositorPipeline) bindTrackToAppsrc(t *webrtc.TrackRemote) {
 			trackBin := c.trackBins[t.ID()]
 			C.gstreamer_compositor_remove_input_track(c.Pipeline, trackBin, C.bool(t.Kind() == webrtc.RTPCodecTypeVideo))
 			delete(c.trackBins, t.ID())
+			delete(boundRemoteTrackKeyframeCallbacks, t.ID())
 			// panic(readErr)
 			return
 		}
@@ -122,4 +135,13 @@ func (c *CompositorPipeline) pushAppsrc(buffer []byte, appsrc string) {
 	inputElementUnsafe := C.CString(appsrc)
 	// defer C.free(unsafe.Pointer(&inputElementUnsafe))
 	C.gstreamer_receive_push_buffer(c.Pipeline, b, C.int(len(buffer)), inputElementUnsafe)
+}
+
+//export goHandleAppsrcForceKeyUnit
+func goHandleAppsrcForceKeyUnit(remoteTrackID *C.char) {
+	id := C.GoString(remoteTrackID)
+	log.Debugf("go forceKeyUnit: %v", id)
+	if trackSendPLI, ok := boundRemoteTrackKeyframeCallbacks[id]; ok {
+		trackSendPLI()
+	}
 }

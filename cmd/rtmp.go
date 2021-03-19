@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/pion/interceptor"
-	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
 
 	"github.com/pion/ion-cluster/pkg/client"
@@ -77,21 +76,7 @@ func relayThread(cmd *cobra.Command, args []string) error {
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {
 		log.Debugf("Client got track: %#v", t)
-		compositor.AddInputTrack(t)
-
-		if t.Kind() == webrtc.RTPCodecTypeVideo {
-			// Send a PLI on an interval so that the publisher is pushing a keyframe every rtcpPLIInterval
-			go func() {
-				ticker := time.NewTicker(time.Second * 3)
-				for range ticker.C {
-					log.Debugf("sending pli")
-					rtcpSendErr := pc.WriteRTCP([]rtcp.Packet{&rtcp.PictureLossIndication{MediaSSRC: uint32(t.SSRC())}})
-					if rtcpSendErr != nil {
-						fmt.Println(rtcpSendErr)
-					}
-				}
-			}()
-		}
+		compositor.AddInputTrack(t, pc)
 
 	}
 
