@@ -221,7 +221,7 @@ void gstreamer_compositor_relayout_videos(GstElement *compositor) {
     rows = 1, cols = 1;
   }else if (num_videos <= 4) {
     rows = 2, cols = 2; 
-  }else if (num_videos <= 12) {
+  }else if (num_videos <= 9) {
     rows = 3, cols = 3;
   }else if (num_videos <= 16) {
     rows = 4, cols = 4; 
