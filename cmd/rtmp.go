@@ -62,7 +62,7 @@ func relayThread(cmd *cobra.Command, args []string) error {
 	rtmpString := ""
 	if len(args) > 0 {
 		rtmpString = fmt.Sprintf(`
-			qtmux name=mux ! queue ! filesink location=%s sync=false async=false
+			flvmux name=mux ! queue ! rtmpsink location=%s sync=false async=false
 				vtee. ! queue ! vtenc_h264 ! video/x-h264,chroma-site=mpeg2 ! mux.
 				atee. ! queue ! faac ! mux.
 		`, args[0])
