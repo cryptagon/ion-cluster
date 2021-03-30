@@ -41,10 +41,13 @@ func NewGSTProducer(c *Client, kind string, path string) *GSTProducer {
 
 	var pipeline *gst.Pipeline
 	if path != "" {
-		pipeline = gst.CreatePipeline(path, audioTrack, videoTrack)
+		pipeline = gst.CreatePlayerPipeline(path, audioTrack, videoTrack)
 	} else {
 		pipeline = gst.CreateTestSrcPipeline(audioTrack, videoTrack)
 	}
+
+	pipeline.BindAppsinkToTrack(videoTrack)
+	pipeline.BindAppsinkToTrack(audioTrack)
 
 	return &GSTProducer{
 		videoTrack: videoTrack,

@@ -71,7 +71,7 @@ type Client struct {
 	pub *transport
 	sub *transport
 
-	OnTrack func(*webrtc.TrackRemote, *webrtc.RTPReceiver)
+	OnTrack func(*webrtc.TrackRemote, *webrtc.RTPReceiver, *webrtc.PeerConnection)
 }
 
 //NewClient returns a new jsonrpc2 client that manages a pub and sub peerConnection
@@ -100,7 +100,7 @@ func (c *Client) Join(sid string) error {
 	c.sub.pc.OnTrack(func(track *webrtc.TrackRemote, recv *webrtc.RTPReceiver) {
 		log.Debugf("client sub got remote stream %v track %v", track.Msid(), track.ID())
 		if c.OnTrack != nil {
-			c.OnTrack(track, recv)
+			c.OnTrack(track, recv, c.sub.pc)
 		}
 	})
 

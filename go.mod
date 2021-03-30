@@ -23,6 +23,7 @@ require (
 	github.com/pion/ion-log v1.0.0
 	github.com/pion/ion-sfu v1.9.3
 	github.com/pion/quic v0.1.4 // indirect
+	github.com/pion/rtcp v1.2.6
 	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
 	github.com/pion/webrtc/v3 v3.0.10
