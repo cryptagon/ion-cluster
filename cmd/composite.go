@@ -18,28 +18,34 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var relayCmd = &cobra.Command{
-	Use:   "rtmp-relay",
+var compositeCmd = &cobra.Command{
+	Use:   "composite",
 	Short: "Connect to an ion-cluster server as a client",
-	RunE:  relayMain,
+	RunE:  compositeMain,
 }
+
+var compositeStreamURL string
+var compositeSavePath string
 
 func init() {
-	relayCmd.PersistentFlags().StringVarP(&clientURL, "url", "u", "ws://localhost:7000", "sfu host to connect to")
-	relayCmd.PersistentFlags().StringVarP(&clientSID, "sid", "s", "test-session", "session id to join")
-	relayCmd.PersistentFlags().StringVarP(&clientToken, "token", "t", "", "jwt access token")
+	compositeCmd.PersistentFlags().StringVarP(&clientURL, "url", "u", "ws://localhost:7000", "sfu host to connect to")
+	compositeCmd.PersistentFlags().StringVarP(&clientSID, "sid", "s", "test-session", "session id to join")
+	compositeCmd.PersistentFlags().StringVarP(&clientToken, "token", "t", "", "jwt access token")
 
-	rootCmd.AddCommand(relayCmd)
+	compositeCmd.PersistentFlags().StringVarP(&compositeSavePath, "save", "", "", "filepath to save video")
+	compositeCmd.PersistentFlags().StringVarP(&compositeStreamURL, "stream", "", "", "rtmp url for streaming")
+
+	rootCmd.AddCommand(compositeCmd)
 }
 
-func relayMain(cmd *cobra.Command, args []string) error {
+func compositeMain(cmd *cobra.Command, args []string) error {
 	runtime.LockOSThread()
-	go relayThread(cmd, args)
+	go compositeThread(cmd, args)
 	gst.MainLoop()
 	return nil
 }
 
-func relayThread(cmd *cobra.Command, args []string) error {
+func compositeThread(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
 
 	sigs := make(chan os.Signal, 1)
@@ -59,19 +65,39 @@ func relayThread(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	rtmpString := ""
-	if len(args) > 0 {
-		rtmpString = fmt.Sprintf(`
-			flvmux name=mux ! queue ! rtmpsink location=%s sync=false async=false
-				vtee. ! queue ! vtenc_h264 ! video/x-h264,chroma-site=mpeg2 ! mux.
-				atee. ! queue ! faac ! mux.
-		`, args[0])
-		log.Debugf("Starting broadcast to url: %s", args[0])
+	encodePipeline := ""
+	if compositeSavePath != "" || compositeStreamURL != "" {
+		encodePipeline = fmt.Sprintf(`
+				tee name=aenctee 
+				tee name=venctee
+				vtee. ! queue ! vtenc_h264 ! video/x-h264,chroma-site=mpeg2 ! venctee.
+				atee. ! queue ! faac ! aenctee.
+		`)
+
+		log.Debugf("encoding composited stream")
+
+		if compositeSavePath != "" {
+			encodePipeline += fmt.Sprintf(`
+				qtmux name=savemux ! queue ! filesink location=%s async=false sync=false
+				venctee. ! queue ! savemux.
+				aenctee. ! queue ! savemux. 
+			`, compositeSavePath)
+			log.Debugf("saving encoded stream to %s", compositeSavePath)
+		}
+
+		if compositeStreamURL != "" {
+			encodePipeline += fmt.Sprintf(`
+				flvmux name=streammux ! queue ! rtmpsink location=%s async=false sync=false
+				venctee. ! queue ! streammux.
+				aenctee. ! queue ! streammux. 
+			`, compositeStreamURL)
+			log.Debugf("streaming rtmp stream to %s", compositeStreamURL)
+		}
 	} else {
-		log.Debugf("No RTMP Url passed in, local compositing only")
+		log.Debugf("local compositing only")
 	}
 
-	compositor := gst.NewCompositorPipeline(rtmpString)
+	compositor := gst.NewCompositorPipeline(encodePipeline)
 	compositor.Play()
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {
