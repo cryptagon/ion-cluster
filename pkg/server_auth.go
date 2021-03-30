@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
-	log "github.com/pion/ion-log"
 )
 
 var (
@@ -33,7 +32,7 @@ func (t *authToken) Valid() error {
 
 func authGetAndValidateToken(config AuthConfig, r *http.Request) (*authToken, error) {
 	vars := r.URL.Query()
-	log.Debugf("Authenticating token")
+	log.Info("Authenticating token")
 	tokenParam := vars["access_token"]
 	if tokenParam == nil || len(tokenParam) < 1 {
 		return nil, errors.New("no token")
@@ -41,7 +40,7 @@ func authGetAndValidateToken(config AuthConfig, r *http.Request) (*authToken, er
 
 	tokenStr := tokenParam[0]
 
-	log.Debugf("checking claims on token %v", tokenStr)
+	log.Info("checking claims on token", "token", tokenStr)
 	token, err := jwt.ParseWithClaims(tokenStr, &authToken{}, config.keyFunc)
 	if err != nil {
 		return nil, err

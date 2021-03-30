@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/pborman/uuid"
-	log "github.com/pion/ion-log"
 	"github.com/pion/ion-sfu/pkg/buffer"
 	"github.com/pion/ion-sfu/pkg/middlewares/datachannel"
 	"github.com/pion/ion-sfu/pkg/sfu"
@@ -54,7 +53,7 @@ type localCoordinator struct {
 
 func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
 	if conf.SFU.BufferFactory == nil {
-		conf.SFU.BufferFactory = buffer.NewBufferFactory(conf.SFU.Router.MaxPacketTrack)
+		conf.SFU.BufferFactory = buffer.NewBufferFactory(conf.SFU.Router.MaxPacketTrack, log.WithName("buffer"))
 	}
 	w := sfu.NewWebRTCTransportConfig(conf.SFU)
 	dc := &sfu.Datachannel{Label: sfu.APIChannelLabel}
@@ -106,7 +105,7 @@ func (c *localCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, e
 func (c *localCoordinator) onSessionClosed(sessionID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	log.Debugf("session %v closed", sessionID)
+	log.Info("session closed", "sessionID", sessionID)
 	delete(c.sessions, sessionID)
 	prometheusGaugeSessions.Dec()
 }

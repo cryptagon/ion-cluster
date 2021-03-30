@@ -8,7 +8,6 @@ import (
 	"time"
 
 	cluster "github.com/pion/ion-cluster/pkg"
-	log "github.com/pion/ion-log"
 	"github.com/pion/ion-sfu/pkg/sfu"
 	"github.com/spf13/cobra"
 )
@@ -30,10 +29,10 @@ func init() {
 
 func serverMain(cmd *cobra.Command, args []string) error {
 
-	log.Infof("--- Starting SFU Node ---")
+	log.Info("--- Starting SFU Node ---")
 	coordinator, err := cluster.NewCoordinator(conf)
 	if err != nil {
-		log.Errorf("error creating coordinator: %v", err)
+		log.Error(err, "error creating coordinator")
 		return err
 	}
 
@@ -48,9 +47,10 @@ func serverMain(cmd *cobra.Command, args []string) error {
 
 	if conf.SFU.Turn.Enabled {
 		_, err := sfu.InitTurnServer(conf.SFU.Turn, nil)
-		log.Infof("Started TURN Server: Listening at %v", conf.SFU.Turn.Address)
+		log.Info("Started TURN Server", "listen", conf.SFU.Turn.Address)
 		if err != nil {
-			log.Panicf("Could not init turn server err: %v", err)
+			log.Error(err, "Could not init turn server")
+			return err
 		}
 	}
 
@@ -62,23 +62,23 @@ func serverMain(cmd *cobra.Command, args []string) error {
 	for {
 		select {
 		case err := <-sError:
-			log.Errorf("Error in wsServer: %v", err)
+			log.Error(err, "Error in wsServer")
 			return err
 		case sig := <-sigs:
-			log.Debugf("Got Signal %v, beginning shutdown", sig)
+			log.Info("Got signal, beginning shutdown", "signal", sig)
 			ticker := time.NewTicker(500 * time.Millisecond)
 			for {
 				active := cluster.MetricsGetActiveClientsCount()
 				if active == 0 {
-					log.Debugf("server idle, shutting down")
+					log.Info("server idle, shutting down")
 					return nil
 				}
-				log.Debugf("shutdown waiting on %v clients", active)
+				log.Info("shutdown waiting on clients", "active", active)
 				select {
 				case <-ticker.C:
 					continue
 				case sig = <-sigs:
-					log.Debugf("Got second signal: forcing shutdown")
+					log.Info("Got second signal: forcing shutdown")
 					return nil
 				}
 			}
