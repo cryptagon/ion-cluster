@@ -21,7 +21,7 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/interceptor v0.0.9
 	github.com/pion/ion-log v1.0.0
-	github.com/pion/ion-sfu v1.9.3
+	github.com/pion/ion-sfu v1.9.8-0.20210322170058-7be82abcb746
 	github.com/pion/quic v0.1.4 // indirect
 	github.com/pion/rtcp v1.2.6
 	github.com/pion/sdp/v2 v2.4.0

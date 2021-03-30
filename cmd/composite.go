@@ -14,7 +14,6 @@ import (
 
 	"github.com/pion/ion-cluster/pkg/client"
 	"github.com/pion/ion-cluster/pkg/client/gst"
-	log "github.com/pion/ion-log"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +54,7 @@ func compositeThread(cmd *cobra.Command, args []string) error {
 	signal := client.NewJSONRPCSignalClient(ctx)
 	c, err := client.NewClient(signal, &w, []interceptor.Interceptor{})
 	if err != nil {
-		log.Debugf("error initializing client %v", err)
+		log.Error(err, "error initializing client")
 	}
 
 	fmt.Printf("client connecting to %v", endpoint())
@@ -74,7 +73,7 @@ func compositeThread(cmd *cobra.Command, args []string) error {
 				atee. ! queue ! faac ! aenctee.
 		`)
 
-		log.Debugf("encoding composited stream")
+		log.Info("encoding composited stream")
 
 		if compositeSavePath != "" {
 			encodePipeline += fmt.Sprintf(`
@@ -82,7 +81,7 @@ func compositeThread(cmd *cobra.Command, args []string) error {
 				venctee. ! queue ! savemux.
 				aenctee. ! queue ! savemux. 
 			`, compositeSavePath)
-			log.Debugf("saving encoded stream to %s", compositeSavePath)
+			log.Info("saving encoded stream", "path", compositeSavePath)
 		}
 
 		if compositeStreamURL != "" {
@@ -91,17 +90,17 @@ func compositeThread(cmd *cobra.Command, args []string) error {
 				venctee. ! queue ! streammux.
 				aenctee. ! queue ! streammux. 
 			`, compositeStreamURL)
-			log.Debugf("streaming rtmp stream to %s", compositeStreamURL)
+			log.Info("streaming rtmp", "url", compositeStreamURL)
 		}
 	} else {
-		log.Debugf("local compositing only")
+		log.Info("local compositing only")
 	}
 
 	compositor := gst.NewCompositorPipeline(encodePipeline)
 	compositor.Play()
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {
-		log.Debugf("Client got track: %#v", t)
+		log.Info("Client got track: %#v", t)
 		compositor.AddInputTrack(t, pc)
 
 	}
@@ -110,7 +109,7 @@ func compositeThread(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	log.Debugf("starting producer")
+	log.Info("starting producer")
 
 	// var producer *client.GSTProducer
 	// if len(args) > 0 {
@@ -137,14 +136,14 @@ func compositeThread(cmd *cobra.Command, args []string) error {
 		select {
 		case <-t.C:
 			if err := signal.Ping(); err != nil {
-				log.Debugf("signal ping err: %v", err)
+				log.Error(err, "signal ping err")
 			}
-			log.Debugf("signal ping got pong")
+			log.Info("signal ping got pong")
 		case sig := <-sigs:
-			log.Debugf("got signal %v", sig)
+			log.Info("got signal", "signal", sig)
 			signal.Close()
 		case <-signalClosedCh:
-			log.Debugf("signal closed")
+			log.Info("signal closed")
 			compositor.Stop()
 			return nil
 		}

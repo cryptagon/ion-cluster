@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/koding/websocketproxy"
 
-	log "github.com/pion/ion-log"
 	"github.com/pion/ion-sfu/pkg/sfu"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
@@ -57,14 +56,14 @@ func (s *Signal) ServeWebsocket() {
 		if s.config.Auth.Enabled {
 			token, err := authGetAndValidateToken(s.config.Auth, r)
 			if err != nil {
-				log.Errorf("error authenticating token => %s", err)
+				log.Error(err, "error authenticating token")
 				http.Error(w, "Invalid Token", http.StatusForbidden)
 				return
 			}
 
-			log.Debugf("valid token with claims %#v", token)
+			log.Info("valid token with claims", "token", token)
 			if token.SID != sid {
-				log.Errorf("invalid claims for session %s => %s", sid, err)
+				log.Error(err, "invalid claims for session", "sessionID", sid)
 				http.Error(w, "Invalid Token", http.StatusForbidden)
 				return
 			}
@@ -80,15 +79,17 @@ func (s *Signal) ServeWebsocket() {
 			endpoint := fmt.Sprintf("%v/session/%v", meta.NodeEndpoint, meta.SessionID)
 			url, err := url.Parse(endpoint)
 			if err != nil {
-				log.Errorf("error parsing backend url to proxy websocket")
+				log.Error(err, "error parsing backend url to proxy websocket")
+				return
 			}
 			proxy := websocketproxy.NewProxy(url)
 			proxy.Upgrader = &upgrader
-			log.Debugf("starting proxy for session %v -> node %v @ %v", meta.SessionID, meta.NodeID, endpoint)
+
+			log.Info("starting proxy for session", "sessionID", meta.SessionID, "nodeID", meta.NodeID, "endpoint", endpoint)
 			prometheusGaugeProxyClients.Inc()
 			proxy.ServeHTTP(w, r)
 			prometheusGaugeProxyClients.Dec()
-			log.Debugf("closed proxy for session %v -> node %v @ %v", meta.SessionID, meta.NodeID, endpoint)
+			log.Info("closed proxy for session", "sessionID", meta.SessionID, "nodeID", meta.NodeID, "endpoint", endpoint)
 			return
 		}
 
@@ -120,10 +121,10 @@ func (s *Signal) ServeWebsocket() {
 
 	var err error
 	if s.config.Key != "" && s.config.Cert != "" {
-		log.Infof("Listening at https://[%s]", s.config.HTTPAddr)
+		log.Info("Started JSONRPC Server (https)", "listen", s.config.HTTPAddr)
 		err = http.ListenAndServeTLS(s.config.HTTPAddr, s.config.Cert, s.config.Key, nil)
 	} else {
-		log.Infof("Listening at http://[%s]", s.config.HTTPAddr)
+		log.Info("Started JSONRPC Server", "listen", s.config.HTTPAddr)
 		err = http.ListenAndServe(s.config.HTTPAddr, nil)
 	}
 

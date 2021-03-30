@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	cluster "github.com/pion/ion-cluster/pkg"
-	log "github.com/pion/ion-log"
 
 	"github.com/gorilla/websocket"
 	"github.com/pion/webrtc/v3"
@@ -69,7 +68,7 @@ func (c *JSONRPCSignalClient) Join(sid string, offer *webrtc.SessionDescription)
 		return nil, errNotConnected
 	}
 
-	log.Debugf("signal client sending join: %v ", sid)
+	log.Info("signal client sending join", "sessionID", sid)
 	var answer *webrtc.SessionDescription
 
 	err := c.jc.Call(c.context, "join", &cluster.Join{SID: sid, Offer: *offer}, &answer)
@@ -86,7 +85,7 @@ func (c *JSONRPCSignalClient) Offer(offer *webrtc.SessionDescription) (*webrtc.S
 		return nil, errNotConnected
 	}
 
-	log.Debugf("signal client sending offer")
+	log.Info("signal client sending offer")
 	var answer *webrtc.SessionDescription
 	err := c.jc.Call(c.context, "offer", &cluster.Negotiation{Desc: *offer}, &answer)
 	if err != nil {
@@ -102,7 +101,7 @@ func (c *JSONRPCSignalClient) Answer(answer *webrtc.SessionDescription) error {
 		return errNotConnected
 	}
 
-	log.Debugf("signal client sending answer")
+	log.Info("signal client sending answer")
 	return c.jc.Notify(c.context, "answer", &cluster.Negotiation{Desc: *answer})
 }
 
@@ -112,7 +111,7 @@ func (c *JSONRPCSignalClient) Trickle(target int, trickle *webrtc.ICECandidateIn
 		return errNotConnected
 	}
 
-	log.Debugf("signal client sending trickle ice")
+	log.Info("signal client sending trickle ice")
 	return c.jc.Notify(c.context, "trickle", &cluster.Trickle{Target: target, Candidate: *trickle})
 }
 
@@ -120,11 +119,11 @@ func (c *JSONRPCSignalClient) Trickle(target int, trickle *webrtc.ICECandidateIn
 func (c *JSONRPCSignalClient) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonrpc2.Request) {
 	switch req.Method {
 	case "offer":
-		log.Debugf("signal client got offer")
+		log.Info("signal client got offer")
 		var offer webrtc.SessionDescription
 		err := json.Unmarshal(*req.Params, &offer)
 		if err != nil {
-			log.Errorf("error parsing offer from server")
+			log.Error(err, "error parsing offer from server")
 			break
 		}
 
@@ -133,12 +132,12 @@ func (c *JSONRPCSignalClient) Handle(ctx context.Context, conn *jsonrpc2.Conn, r
 		}
 
 	case "trickle":
-		log.Debugf("signal client got trickle ice")
+		log.Info("signal client got trickle ice")
 
 		var trickle cluster.Trickle
 		err := json.Unmarshal(*req.Params, &trickle)
 		if err != nil {
-			log.Errorf("error parsing trickle ice from server")
+			log.Error(err, "error parsing trickle ice from server")
 			break
 		}
 

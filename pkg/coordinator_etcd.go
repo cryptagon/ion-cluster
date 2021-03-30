@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/pborman/uuid"
-	log "github.com/pion/ion-log"
 	"github.com/pion/ion-sfu/pkg/buffer"
 	"github.com/pion/ion-sfu/pkg/middlewares/datachannel"
 	"github.com/pion/ion-sfu/pkg/sfu"
@@ -32,7 +31,7 @@ type etcdCoordinator struct {
 }
 
 func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
-	log.Debugf("creating etcd client")
+	log.Info("creating etcd client")
 	cli, err := clientv3.New(clientv3.Config{
 		DialTimeout: time.Second * 3,
 		DialOptions: []grpc.DialOption{grpc.WithBlock()},
@@ -43,13 +42,13 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 	}
 
 	if conf.SFU.BufferFactory == nil {
-		conf.SFU.BufferFactory = buffer.NewBufferFactory(conf.SFU.Router.MaxPacketTrack)
+		conf.SFU.BufferFactory = buffer.NewBufferFactory(conf.SFU.Router.MaxPacketTrack, log.WithName("buffer"))
 	}
 	w := sfu.NewWebRTCTransportConfig(conf.SFU)
 	dc := &sfu.Datachannel{Label: sfu.APIChannelLabel}
 	dc.Use(datachannel.SubscriberAPI)
 
-	log.Debugf("created etcdCoordinator")
+	log.Info("created etcdCoordinator")
 	return &etcdCoordinator{
 		client:        cli,
 		nodeID:        uuid.New(),
@@ -76,7 +75,7 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	key := fmt.Sprintf("/session/%v", sessionID)
 	mu := concurrency.NewMutex(s, key)
 	if err := mu.Lock(ctx); err != nil {
-		log.Errorf("could not acquire session lock")
+		log.Error(err, "could not acquire session lock")
 		return nil, err
 	}
 	defer mu.Unlock(ctx)
@@ -84,18 +83,18 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	// Check to see if sessionMeta exists for this key
 	gr, err := e.client.Get(ctx, key)
 	if err != nil {
-		log.Errorf("error looking up session")
+		log.Error(err, "error looking up session")
 		return nil, err
 	}
 
 	// Session already exists somewhere in the cluster
 	// return the existing meta to the user
 	if gr.Count > 0 {
-		log.Debugf("found session")
+		log.Info("found session")
 
 		var meta sessionMeta
 		if err := json.Unmarshal(gr.Kvs[0].Value, &meta); err != nil {
-			log.Errorf("error unmarshaling session meta: %v", err)
+			log.Error(err, "error unmarshaling session meta")
 			return nil, err
 		}
 		meta.Redirect = (meta.NodeID != e.nodeID)
@@ -110,14 +109,14 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	// First lets create a lease for the sessionKey
 	lease, err := e.client.Grant(ctx, 1)
 	if err != nil {
-		log.Errorf("error acquiring lease for session key %v: %v", key, err)
+		log.Error(err, "error acquiring lease for session key", "key", key)
 		return nil, err
 	}
 
 	ctx, leaseCancel := context.WithCancel(context.Background())
 	leaseKeepAlive, err := e.client.KeepAlive(ctx, lease.ID)
 	if err != nil {
-		log.Errorf("error activating keepAlive for lease %v: %v", lease.ID, err)
+		log.Error(err, "error activating keepAlive for lease", "leaseID", lease.ID)
 	}
 	<-leaseKeepAlive
 
@@ -133,7 +132,7 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	payload, _ := json.Marshal(&meta)
 	_, err = e.client.Put(ctx, key, string(payload), clientv3.WithLease(lease.ID))
 	if err != nil {
-		log.Errorf("error storing session meta")
+		log.Error(err, "error storing session meta")
 		return nil, err
 	}
 
@@ -171,13 +170,13 @@ func (e *etcdCoordinator) onSessionClosed(sessionID string) {
 	defer cancel()
 	s, err := concurrency.NewSession(e.client, concurrency.WithContext(ctx))
 	if err != nil {
-		log.Errorf("etcdCoordinator onSessionClosed couldn't acquire sesion lock for %v", sessionID)
+		log.Error(err, "etcdCoordinator onSessionClosed couldn't acquire sesion lock", "sessionID", sessionID)
 		return
 	}
 	key := fmt.Sprintf("/session/%v", sessionID)
 	mu := concurrency.NewMutex(s, key)
 	if err := mu.Lock(ctx); err != nil {
-		log.Errorf("etcdCoordinator onSessionClosed couldn't acquire sesion lock for %v", sessionID)
+		log.Error(err, "etcdCoordinator onSessionClosed couldn't acquire sesion lock", "sessionID", sessionID)
 		return
 	}
 	defer mu.Unlock(ctx)
@@ -187,13 +186,13 @@ func (e *etcdCoordinator) onSessionClosed(sessionID string) {
 		delete(e.sessionLeases, sessionID)
 		leaseCancel()
 	} else {
-		log.Warnf("Could not find session lease!")
+		log.Error(nil, "Could not find session lease!")
 	}
 
 	// Delete session meta
 	_, err = e.client.Delete(ctx, key)
 	if err != nil {
-		log.Errorf("etcdCoordinator error deleting sessionMeta for %v", sessionID)
+		log.Error(err, "etcdCoordinator error deleting sessionMeta", "sessionID", sessionID)
 		return
 	}
 
@@ -201,5 +200,5 @@ func (e *etcdCoordinator) onSessionClosed(sessionID string) {
 	delete(e.localSessions, sessionID)
 	prometheusGaugeSessions.Dec()
 
-	log.Debugf("etcdCoordinator canceled /session/%v lease", sessionID)
+	log.Info("etcdCoordinator canceled session lease", "sessionID", sessionID)
 }

@@ -5,8 +5,16 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	logr "github.com/pion/ion-sfu/pkg/logger"
 	"github.com/pion/ion-sfu/pkg/sfu"
 )
+
+var log = logr.New().WithName("cluster")
+
+func init() {
+	logr.SetGlobalOptions(logr.GlobalConfig{V: 1})
+	sfu.Logger = log.WithName("sfu")
+}
 
 // RootConfig is the root config read in from config.toml
 type RootConfig struct {

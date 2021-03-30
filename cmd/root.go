@@ -10,7 +10,8 @@ import (
 
 	"github.com/mitchellh/go-homedir"
 	cluster "github.com/pion/ion-cluster/pkg"
-	log "github.com/pion/ion-log"
+	logr "github.com/pion/ion-sfu/pkg/logger"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -25,6 +26,8 @@ var (
 		Short: "ion-cluster is a fully featured and scalable webrtc sfu ",
 		Long:  `A batteries included and scalable implementation of ion-sfu`,
 	}
+
+	log = logr.New().WithName("cmd")
 )
 
 func init() {
@@ -56,7 +59,7 @@ func bindConfigEnvs(iface interface{}, parts ...string) {
 		case reflect.Struct:
 			bindConfigEnvs(v.Interface(), append(parts, name)...)
 		default:
-			log.Tracef("BINDENV: %v", strings.Join(append(parts, name), "."))
+			log.V(1).Info(fmt.Sprintf("BINDENV: %v", strings.Join(append(parts, name), ".")))
 			viper.BindEnv(strings.Join(append(parts, name), "."))
 		}
 	}
@@ -71,7 +74,7 @@ func initConfig() {
 		// Find home directory.
 		home, err := homedir.Dir()
 		if err != nil {
-			log.Errorf("Error: %v", err)
+			log.Error(err, "Error: %v")
 			os.Exit(1)
 		}
 
@@ -90,13 +93,12 @@ func initConfig() {
 
 	err := viper.GetViper().Unmarshal(&conf)
 	if err != nil {
-		log.Errorf("sfu config file %s loaded failed. %v\n", cfgFile, err)
-
+		log.Error(err, "sfu config file loaded failed. %v\n", "cfg", cfgFile)
 		os.Exit(1)
 	}
 
 	if len(conf.SFU.WebRTC.ICEPortRange) > 2 {
-		log.Errorf("config file %s loaded failed. range port must be [min,max]\n", cfgFile)
+		log.Error(err, "config file %s loaded failed. range port must be [min,max]\n", cfgFile)
 		os.Exit(1)
 	}
 
@@ -104,8 +106,4 @@ func initConfig() {
 	// 	log.Errorf("config file %s loaded failed. range port must be [min, max] and max - min >= %d\n", file, portRangeLimit)
 	// 	os.Exit(1)
 	// }
-
-	fixByFile := []string{"asm_amd64.s", "proc.go", "icegatherer.go"}
-	fixByFunc := []string{}
-	log.Init(conf.SFU.Log.Level, fixByFile, fixByFunc)
 }

@@ -2,9 +2,11 @@ package client
 
 import (
 	"github.com/pion/interceptor"
-	log "github.com/pion/ion-log"
+	logr "github.com/pion/ion-sfu/pkg/logger"
 	"github.com/pion/webrtc/v3"
 )
+
+var log = logr.New().WithName("client")
 
 const (
 	rolePublish   int = 0
@@ -52,7 +54,7 @@ func newTransport(role int, signal Signal, cfg *webrtc.Configuration, extraInter
 	})
 
 	pc.OnDataChannel(func(channel *webrtc.DataChannel) {
-		log.Debugf("transport got datachannel: %v", channel.Label())
+		log.Info("transport got datachannel", "label", channel.Label())
 		//todo handle api / remoteStream
 		t.api = channel
 	})
@@ -98,7 +100,7 @@ func (c *Client) Join(sid string) error {
 	c.signal.OnTrickle(c.signalOnTrickle)
 
 	c.sub.pc.OnTrack(func(track *webrtc.TrackRemote, recv *webrtc.RTPReceiver) {
-		log.Debugf("client sub got remote stream %v track %v", track.Msid(), track.ID())
+		log.Info("client sub got remote track", "streamID", track.Msid(), "trackID", track.ID())
 		if c.OnTrack != nil {
 			c.OnTrack(track, recv, c.sub.pc)
 		}
@@ -107,21 +109,21 @@ func (c *Client) Join(sid string) error {
 	// Setup Pub PC
 	offer, err := c.pub.pc.CreateOffer(nil)
 	if err != nil {
-		log.Errorf("client join could not create pub offer: %v", err)
+		log.Error(err, "client join could not create pub offer")
 		return err
 	}
 	if err := c.pub.pc.SetLocalDescription(offer); err != nil {
-		log.Errorf("client join pub couldn't SetLocalDescription %v", err)
+		log.Error(err, "client join pub couldn't SetLocalDescription")
 		return err
 	}
 
 	answer, err := c.signal.Join(sid, &offer)
 	if err != nil {
-		log.Errorf("client join signal error: %v", err)
+		log.Error(err, "client join signal error")
 		return err
 	}
 	if err := c.pub.pc.SetRemoteDescription(*answer); err != nil {
-		log.Errorf("client join pub couldn't SetRemoteDescription %v", err)
+		log.Error(err, "client join pub couldn't SetRemoteDescription")
 		return err
 	}
 
@@ -150,7 +152,7 @@ func (c *Client) Publish(p Producer) error {
 		rtcpBuf := make([]byte, 1500)
 		for {
 			if _, _, rtcpErr := videoSender.Read(rtcpBuf); rtcpErr != nil {
-				log.Errorf("videoSender rtcp error: %v", err)
+				log.Error(err, "videoSender rtcp error")
 				return
 			}
 		}
@@ -160,7 +162,7 @@ func (c *Client) Publish(p Producer) error {
 		rtcpBuf := make([]byte, 1500)
 		for {
 			if _, _, rtcpErr := audioSender.Read(rtcpBuf); rtcpErr != nil {
-				log.Errorf("audioSender rtcp error: %v", err)
+				log.Error(err, "audioSender rtcp error")
 				return
 			}
 		}
@@ -172,28 +174,28 @@ func (c *Client) Publish(p Producer) error {
 
 // Pub PC re-negotiation
 func (c *Client) pubNegotiationNeeded() {
-	log.Debugf("client pubOnNegotiationNeeded")
+	log.Info("client pubOnNegotiationNeeded")
 	offer, err := c.pub.pc.CreateOffer(nil)
 	if err != nil {
-		log.Errorf("pub could not create pub offer: %v", err)
+		log.Error(err, "pub could not create pub offer")
 		return
 	}
 	if err := c.pub.pc.SetLocalDescription(offer); err != nil {
-		log.Errorf("pub couldn't SetLocalDescription %v", err)
+		log.Error(err, "pub couldn't SetLocalDescription")
 		return
 	}
 
 	answer, err := c.signal.Offer(&offer)
 	if err != nil {
-		log.Errorf("pub signal error: %v", err)
+		log.Error(err, "pub signal error")
 		return
 	}
 	if err := c.pub.pc.SetRemoteDescription(*answer); err != nil {
-		log.Errorf("pub couldn't SetRemoteDescription %v", err)
+		log.Error(err, "pub couldn't SetRemoteDescription")
 		return
 	}
 
-	log.Debugf("client negotiated")
+	log.Info("client negotiated")
 }
 
 // CreateDatachannel to publish
@@ -204,7 +206,7 @@ func (c *Client) CreateDatachannel(label string) (*webrtc.DataChannel, error) {
 // signalOnNegotiate is triggered from server for the sub pc
 func (c *Client) signalOnNegotiate(desc *webrtc.SessionDescription) {
 	if err := c.sub.pc.SetRemoteDescription(*desc); err != nil {
-		log.Errorf("sub couldn't SetRemoteDescription: %v", err)
+		log.Error(err, "sub couldn't SetRemoteDescription")
 		return
 	}
 
@@ -215,11 +217,11 @@ func (c *Client) signalOnNegotiate(desc *webrtc.SessionDescription) {
 
 	answer, err := c.sub.pc.CreateAnswer(nil)
 	if err != nil {
-		log.Errorf("sub couldn't create answer %v", err)
+		log.Error(err, "sub couldn't create answer")
 		return
 	}
 	if err := c.sub.pc.SetLocalDescription(answer); err != nil {
-		log.Errorf("sub couldn't setLocalDescription %v", err)
+		log.Error(err, "sub couldn't setLocalDescription")
 		return
 	}
 

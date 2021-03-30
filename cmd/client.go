@@ -13,7 +13,6 @@ import (
 
 	"github.com/pion/ion-cluster/pkg/client"
 	"github.com/pion/ion-cluster/pkg/client/gst"
-	log "github.com/pion/ion-log"
 	"github.com/spf13/cobra"
 )
 
@@ -62,10 +61,10 @@ func clientThread(cmd *cobra.Command, args []string) error {
 	signal := client.NewJSONRPCSignalClient(ctx)
 	c, err := client.NewClient(signal, &w, []interceptor.Interceptor{})
 	if err != nil {
-		log.Debugf("error initializing client %v", err)
+		log.Error(err, "error initializing client")
 	}
 
-	fmt.Printf("client connecting to %v", endpoint())
+	log.Info("client connecting ", "endpoint", endpoint())
 
 	signalClosedCh, err := signal.Open(endpoint())
 	if err != nil {
@@ -73,7 +72,7 @@ func clientThread(cmd *cobra.Command, args []string) error {
 	}
 
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {
-		log.Debugf("Client got track: %#v", t)
+		log.Info("Client got track: %#v", t)
 
 		go func() {
 			var videoTrack, audioTrack *webrtc.TrackRemote
@@ -84,7 +83,7 @@ func clientThread(cmd *cobra.Command, args []string) error {
 				audioTrack = t
 			}
 
-			log.Debugf("client pipeline starting: ", t)
+			log.Info("client pipeline starting: ", "pipeline", t)
 			pipeline := gst.CreateClientPipeline(audioTrack, videoTrack)
 			pipeline.Start()
 			buf := make([]byte, 1400)
@@ -102,7 +101,7 @@ func clientThread(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	log.Debugf("starting producer")
+	log.Info("starting producer")
 
 	var producer *client.GSTProducer
 	if len(args) > 0 {
@@ -115,13 +114,13 @@ func clientThread(cmd *cobra.Command, args []string) error {
 	}
 
 	if producer != nil {
-		log.Debugf("publishing tracks")
+		log.Info("publishing tracks")
 		if err := c.Publish(producer); err != nil {
-			log.Errorf("error publishing tracks: %v", err)
+			log.Error(err, "error publishing tracks")
 			return err
 		}
 
-		log.Debugf("tracks published")
+		log.Info("tracks published")
 	}
 
 	t := time.NewTicker(time.Second * 5)
@@ -129,14 +128,14 @@ func clientThread(cmd *cobra.Command, args []string) error {
 		select {
 		case <-t.C:
 			if err := signal.Ping(); err != nil {
-				log.Debugf("signal ping err: %v", err)
+				log.Error(err, "signal ping err")
 			}
-			log.Debugf("signal ping got pong")
+			log.Info("signal ping got pong")
 		case sig := <-sigs:
-			log.Debugf("got signal %v", sig)
+			log.Info("got signal", "signal", sig)
 			signal.Close()
 		case <-signalClosedCh:
-			log.Debugf("signal closed")
+			log.Info("signal closed")
 			os.Exit(1)
 			return nil
 		}

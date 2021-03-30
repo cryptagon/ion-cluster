@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sync"
 
-	log "github.com/pion/ion-log"
 	"github.com/pion/ion-sfu/pkg/sfu"
 	"github.com/pion/webrtc/v3"
 	"github.com/sourcegraph/jsonrpc2"
@@ -53,7 +52,7 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		var join Join
 		err := json.Unmarshal(*req.Params, &join)
 		if err != nil {
-			log.Errorf("connect: error parsing offer: %v", err)
+			log.Error(err, "connect: error parsing offer")
 			replyError(err)
 			break
 		}
@@ -88,7 +87,7 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 
 		p.OnOffer = func(offer *webrtc.SessionDescription) {
 			if err := conn.Notify(ctx, "offer", offer); err != nil {
-				log.Errorf("error sending offer %s", err)
+				log.Error(err, "error sending offer")
 			}
 		}
 		p.OnIceCandidate = func(candidate *webrtc.ICECandidateInit, target int) {
@@ -96,12 +95,12 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 				Candidate: *candidate,
 				Target:    target,
 			}); err != nil {
-				log.Errorf("error sending ice candidate %s", err)
+				log.Error(err, "error sending ice candidate")
 			}
 		}
 		p.OnICEConnectionStateChange = func(s webrtc.ICEConnectionState) {
 			if s == webrtc.ICEConnectionStateFailed || s == webrtc.ICEConnectionStateClosed {
-				log.Infof("peer ice failed/closed, closing peer and websocket")
+				log.Info("peer ice failed/closed, closing peer and websocket")
 				p.Close()
 				conn.Close()
 			}
@@ -113,7 +112,7 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		var negotiation Negotiation
 		err := json.Unmarshal(*req.Params, &negotiation)
 		if err != nil {
-			log.Errorf("connect: error parsing offer: %v", err)
+			log.Error(err, "connect: error parsing offer")
 			replyError(err)
 			break
 		}
@@ -129,7 +128,7 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		var negotiation Negotiation
 		err := json.Unmarshal(*req.Params, &negotiation)
 		if err != nil {
-			log.Errorf("connect: error parsing offer: %v", err)
+			log.Error(err, "connect: error parsing offer")
 			replyError(err)
 			break
 		}
@@ -143,7 +142,7 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		var trickle Trickle
 		err := json.Unmarshal(*req.Params, &trickle)
 		if err != nil {
-			log.Errorf("connect: error parsing candidate: %v", err)
+			log.Error(err, "connect: error parsing candidate")
 			replyError(err)
 			break
 		}
