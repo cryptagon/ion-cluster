@@ -211,7 +211,7 @@ func (p *Pipeline) Push(buffer []byte, appsrc string) {
 
 //export goHandlePipelineBuffer
 func goHandlePipelineBuffer(buffer unsafe.Pointer, bufferLen C.int, duration C.int, localTrackID *C.char) {
-	// log.Debugf("localtrack: %v", C.GoString(localTrackID))
+	// log.Info("localtrack: %v", C.GoString(localTrackID))
 	var track *webrtc.TrackLocalStaticSample = boundTracks[C.GoString(localTrackID)]
 	goDuration := time.Duration(duration)
 	if track == nil {

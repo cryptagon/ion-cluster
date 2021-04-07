@@ -87,4 +87,5 @@ func (t *GSTProducer) Stop() {
 //Start the pipeline
 func (t *GSTProducer) Start() {
 	t.pipeline.Start()
+	t.pipeline.Play()
 }
