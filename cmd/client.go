@@ -74,27 +74,27 @@ func clientThread(cmd *cobra.Command, args []string) error {
 	c.OnTrack = func(t *webrtc.TrackRemote, r *webrtc.RTPReceiver, pc *webrtc.PeerConnection) {
 		log.Info("Client got track: %#v", t)
 
-		go func() {
-			var videoTrack, audioTrack *webrtc.TrackRemote
-			switch t.Kind() {
-			case webrtc.RTPCodecTypeVideo:
-				videoTrack = t
-			case webrtc.RTPCodecTypeAudio:
-				audioTrack = t
-			}
+		// go func() {
+		// 	var videoTrack, audioTrack *webrtc.TrackRemote
+		// 	switch t.Kind() {
+		// 	case webrtc.RTPCodecTypeVideo:
+		// 		videoTrack = t
+		// 	case webrtc.RTPCodecTypeAudio:
+		// 		audioTrack = t
+		// 	}
 
-			log.Info("client pipeline starting: ", "pipeline", t)
-			pipeline := gst.CreateClientPipeline(audioTrack, videoTrack)
-			pipeline.Start()
-			buf := make([]byte, 1400)
-			for {
-				i, _, readErr := t.Read(buf)
-				if readErr != nil {
-					panic(err)
-				}
-				pipeline.Push(buf[:i], t.ID())
-			}
-		}()
+		// 	log.Info("client pipeline starting: ", "pipeline", t)
+		// 	pipeline := gst.CreateClientPipeline(audioTrack, videoTrack)
+		// 	pipeline.Start()
+		// 	buf := make([]byte, 1400)
+		// 	for {
+		// 		i, _, readErr := t.Read(buf)
+		// 		if readErr != nil {
+		// 			panic(err)
+		// 		}
+		// 		pipeline.Push(buf[:i], t.ID())
+		// 	}
+		// }()
 	}
 
 	if err := c.Join(clientSID); err != nil {
@@ -107,6 +107,7 @@ func clientThread(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 {
 		switch args[0] {
 		case "test":
+			log.Info("starting video test pipeline")
 			producer = client.NewGSTProducer(c, "video", "")
 		default:
 			producer = client.NewGSTProducer(c, "screen", args[0])
