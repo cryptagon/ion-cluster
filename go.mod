@@ -35,8 +35,9 @@ require (
 	github.com/sourcegraph/jsonrpc2 v0.0.0-20210201082850-366fbb520750
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
-	github.com/viant/toolbox v0.24.0 // indirect
 	go.etcd.io/etcd v3.3.25+incompatible // indirect
 	google.golang.org/grpc v1.35.0
-	sigs.k8s.io/yaml v1.2.0 // indirect
+	k8s.io/api v0.20.4
+	k8s.io/apimachinery v0.20.4
+	k8s.io/client-go v0.20.4
 )
