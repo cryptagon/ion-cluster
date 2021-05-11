@@ -32,7 +32,7 @@ type Trickle struct {
 type JSONSignal struct {
 	mu sync.Mutex
 	c  coordinator
-	*sfu.Peer
+	*sfu.PeerLocal
 }
 
 // Handle incoming RPC call events like join, answer, offer and trickle
