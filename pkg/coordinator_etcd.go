@@ -24,9 +24,8 @@ type etcdCoordinator struct {
 	client       *clientv3.Client
 
 	w             sfu.WebRTCTransportConfig
-	bufferFactory *buffer.Factory
 	datachannels  []*sfu.Datachannel
-	localSessions map[string]*sfu.Session
+	localSessions map[string]*sfu.SessionLocal
 	sessionLeases map[string]context.CancelFunc
 }
 
@@ -54,10 +53,9 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 		nodeID:        uuid.New(),
 		nodeEndpoint:  conf.Endpoint(),
 		w:             w,
-		bufferFactory: conf.SFU.BufferFactory,
 		datachannels:  []*sfu.Datachannel{dc},
 		sessionLeases: make(map[string]context.CancelFunc),
-		localSessions: make(map[string]*sfu.Session),
+		localSessions: make(map[string]*sfu.SessionLocal),
 	}, nil
 }
 
@@ -139,7 +137,7 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	return &meta, nil
 }
 
-func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
+func (e *etcdCoordinator) ensureSession(sessionID string) sfu.Session {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -147,7 +145,7 @@ func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
 		return s
 	}
 
-	s := sfu.NewSession(sessionID, e.bufferFactory, e.datachannels, e.w)
+	s := sfu.NewSession(sessionID, e.datachannels, e.w).(*sfu.SessionLocal)
 	s.OnClose(func() {
 		e.onSessionClosed(sessionID)
 	})
@@ -157,7 +155,7 @@ func (e *etcdCoordinator) ensureSession(sessionID string) *sfu.Session {
 	return s
 }
 
-func (e *etcdCoordinator) GetSession(sid string) (*sfu.Session, sfu.WebRTCTransportConfig) {
+func (e *etcdCoordinator) GetSession(sid string) (sfu.Session, sfu.WebRTCTransportConfig) {
 	return e.ensureSession(sid), e.w
 }
 

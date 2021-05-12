@@ -44,11 +44,10 @@ type localCoordinator struct {
 	nodeID       string
 	nodeEndpoint string
 
-	mu            sync.Mutex
-	w             sfu.WebRTCTransportConfig
-	bufferFactory *buffer.Factory
-	sessions      map[string]*sfu.Session
-	datachannels  []*sfu.Datachannel
+	mu           sync.Mutex
+	w            sfu.WebRTCTransportConfig
+	sessions     map[string]*sfu.SessionLocal
+	datachannels []*sfu.Datachannel
 }
 
 func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
@@ -60,16 +59,15 @@ func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
 	dc.Use(datachannel.SubscriberAPI)
 
 	return &localCoordinator{
-		nodeID:        uuid.New(),
-		nodeEndpoint:  conf.Endpoint(),
-		datachannels:  []*sfu.Datachannel{dc},
-		sessions:      make(map[string]*sfu.Session),
-		w:             w,
-		bufferFactory: conf.SFU.BufferFactory,
+		nodeID:       uuid.New(),
+		nodeEndpoint: conf.Endpoint(),
+		datachannels: []*sfu.Datachannel{dc},
+		sessions:     make(map[string]*sfu.SessionLocal),
+		w:            w,
 	}, nil
 }
 
-func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
+func (c *localCoordinator) ensureSession(sessionID string) sfu.Session {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -77,7 +75,7 @@ func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
 		return s
 	}
 
-	s := sfu.NewSession(sessionID, c.bufferFactory, c.datachannels, c.w)
+	s := sfu.NewSession(sessionID, c.datachannels, c.w).(*sfu.SessionLocal)
 	s.OnClose(func() {
 		c.onSessionClosed(sessionID)
 	})
@@ -87,7 +85,7 @@ func (c *localCoordinator) ensureSession(sessionID string) *sfu.Session {
 	return s
 }
 
-func (c *localCoordinator) GetSession(sid string) (*sfu.Session, sfu.WebRTCTransportConfig) {
+func (c *localCoordinator) GetSession(sid string) (sfu.Session, sfu.WebRTCTransportConfig) {
 	return c.ensureSession(sid), c.w
 }
 
