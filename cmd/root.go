@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -11,6 +12,10 @@ import (
 	"github.com/mitchellh/go-homedir"
 	cluster "github.com/pion/ion-cluster/pkg"
 	logr "github.com/pion/ion-sfu/pkg/logger"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -65,6 +70,52 @@ func bindConfigEnvs(iface interface{}, parts ...string) {
 	}
 }
 
+func kubeConfigureExternalIP() {
+	cfg, err := rest.InClusterConfig()
+	if err != nil {
+		log.Info("k8s not running in cluster, skipping ip config")
+		return
+	}
+
+	clientset, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		log.Error(err, "couldn't build k8s client")
+		return
+	}
+
+	internalIP := conf.Signal.FQDN
+	externalIP := ""
+	nodes, _ := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+
+	log.Info("k8s querying for node info")
+	// Iterate the cluster nodes and find the node we're running on
+	for _, n := range nodes.Items {
+		match := false
+		for _, a := range n.Status.Addresses {
+			if a.Type == v1.NodeInternalIP && a.Address == internalIP {
+				match = true
+				break
+			}
+		}
+
+		// This is our node, lets get the externalIP
+		if match {
+			for _, a := range n.Status.Addresses {
+				if a.Type == v1.NodeExternalIP {
+					externalIP = a.Address
+					break
+				}
+			}
+
+		}
+	}
+
+	if externalIP != "" {
+		log.Info("k8s found correct node, using externalIP", "externalIP", externalIP)
+		conf.SFU.WebRTC.Candidates.NAT1To1IPs = []string{externalIP}
+	}
+}
+
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
@@ -106,4 +157,6 @@ func initConfig() {
 	// 	log.Errorf("config file %s loaded failed. range port must be [min, max] and max - min >= %d\n", file, portRangeLimit)
 	// 	os.Exit(1)
 	// }
+
+	kubeConfigureExternalIP()
 }
