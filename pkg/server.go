@@ -104,6 +104,7 @@ func (s *Signal) ServeWebsocket() {
 			sync.Mutex{},
 			s.c,
 			sfu.NewPeer(s.c),
+			"",
 		}
 		defer p.Close()
 

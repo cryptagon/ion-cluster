@@ -31,7 +31,7 @@ func NewSession(id string, dcs []*sfu.Datachannel, cfg sfu.WebRTCTransportConfig
 	}
 }
 
-func (s *Session) UpdateMetadataForPeer(peerID string, meta interface{}) {
+func (s *Session) UpdatePresenceMetaForPeer(peerID string, meta interface{}) {
 	s.mu.Lock()
 	s.mu.Unlock()
 

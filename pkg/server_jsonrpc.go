@@ -39,6 +39,8 @@ type JSONSignal struct {
 	mu sync.Mutex
 	c  coordinator
 	*sfu.PeerLocal
+
+	sid string
 }
 
 // Handle incoming RPC call events like join, answer, offer and trickle
@@ -118,6 +120,8 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		listen := make(chan Broadcast)
 		session.BroadcastAddListener(p.ID(), listen)
 
+		p.sid = join.SID
+
 		stop := conn.DisconnectNotify()
 		go func() {
 			log.Info("peer starting broadcast listener")
@@ -128,6 +132,7 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 					conn.Notify(ctx, msg.method, msg.params)
 				case <-stop:
 					session.BroadcastRemoveListener(p.ID())
+					session.UpdatePresenceMetaForPeer(p.ID(), nil)
 					return
 				}
 			}
@@ -179,7 +184,11 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			replyError(err)
 		}
 
-	case "presence":
+	case "presence_set":
+		if p.sid == "" {
+			replyError(fmt.Errorf("cannot update presence for peer not in any session"))
+			break
+		}
 		var meta map[string]interface{}
 		err := json.Unmarshal(*req.Params, &meta)
 		if err != nil {
@@ -187,6 +196,10 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			replyError(err)
 			break
 		}
+
+		s, _ := p.c.GetSession(p.sid)
+		session := s.(*Session)
+		session.UpdatePresenceMetaForPeer(p.ID(), meta)
 
 	case "ping":
 		_ = conn.Reply(ctx, req.ID, "pong")
