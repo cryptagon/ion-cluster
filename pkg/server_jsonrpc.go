@@ -29,6 +29,12 @@ type Trickle struct {
 	Candidate webrtc.ICECandidateInit `json:"candidate"`
 }
 
+// Presence contains metadata for every peerID (can be used for mapping userIDs to streams, stream types, etc)
+type Presence struct {
+	Revision uint64                 `json:"revision"`
+	Meta     map[string]interface{} `json:"meta"`
+}
+
 type JSONSignal struct {
 	mu sync.Mutex
 	c  coordinator
@@ -106,6 +112,27 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 
+		s, _ := p.c.GetSession(join.SID)
+		session := s.(*Session)
+
+		listen := make(chan Broadcast)
+		session.BroadcastAddListener(p.ID(), listen)
+
+		stop := conn.DisconnectNotify()
+		go func() {
+			log.Info("peer starting broadcast listener")
+			for {
+				select {
+				case msg := <-listen:
+					log.Info("peer got broadcast", "id", p.ID(), "msg", msg)
+					conn.Notify(ctx, msg.method, msg.params)
+				case <-stop:
+					session.BroadcastRemoveListener(p.ID())
+					return
+				}
+			}
+		}()
+
 		_ = conn.Reply(ctx, req.ID, answer)
 
 	case "offer":
@@ -150,6 +177,15 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		err = p.Trickle(trickle.Candidate, trickle.Target)
 		if err != nil {
 			replyError(err)
+		}
+
+	case "presence":
+		var meta map[string]interface{}
+		err := json.Unmarshal(*req.Params, &meta)
+		if err != nil {
+			log.Error(err, "presence: error parsing metadata")
+			replyError(err)
+			break
 		}
 
 	case "ping":

@@ -46,7 +46,7 @@ type localCoordinator struct {
 
 	mu           sync.Mutex
 	w            sfu.WebRTCTransportConfig
-	sessions     map[string]*sfu.SessionLocal
+	sessions     map[string]*Session
 	datachannels []*sfu.Datachannel
 }
 
@@ -62,12 +62,12 @@ func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
 		nodeID:       uuid.New(),
 		nodeEndpoint: conf.Endpoint(),
 		datachannels: []*sfu.Datachannel{dc},
-		sessions:     make(map[string]*sfu.SessionLocal),
+		sessions:     make(map[string]*Session),
 		w:            w,
 	}, nil
 }
 
-func (c *localCoordinator) ensureSession(sessionID string) sfu.Session {
+func (c *localCoordinator) ensureSession(sessionID string) *Session {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -75,14 +75,14 @@ func (c *localCoordinator) ensureSession(sessionID string) sfu.Session {
 		return s
 	}
 
-	s := sfu.NewSession(sessionID, c.datachannels, c.w).(*sfu.SessionLocal)
+	s := NewSession(sessionID, c.datachannels, c.w)
 	s.OnClose(func() {
 		c.onSessionClosed(sessionID)
 	})
 	prometheusGaugeSessions.Inc()
 
-	c.sessions[sessionID] = s
-	return s
+	c.sessions[sessionID] = &s
+	return &s
 }
 
 func (c *localCoordinator) GetSession(sid string) (sfu.Session, sfu.WebRTCTransportConfig) {
