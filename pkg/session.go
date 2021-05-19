@@ -33,14 +33,13 @@ func NewSession(id string, dcs []*sfu.Datachannel, cfg sfu.WebRTCTransportConfig
 
 func (s *Session) UpdatePresenceMetaForPeer(peerID string, meta interface{}) {
 	s.mu.Lock()
-	s.mu.Unlock()
+	defer s.mu.Unlock()
 
+	s.presenceRevision += 1
 	if meta != nil {
 		s.presence[peerID] = meta
-		s.presenceRevision += 1
 	} else {
 		delete(s.presence, peerID)
-		s.presenceRevision += 1
 	}
 
 	msg := Broadcast{
