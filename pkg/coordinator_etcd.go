@@ -137,7 +137,7 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	return &meta, nil
 }
 
-func (e *etcdCoordinator) ensureSession(sessionID string) sfu.Session {
+func (e *etcdCoordinator) ensureSession(sessionID string) *Session {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -145,14 +145,14 @@ func (e *etcdCoordinator) ensureSession(sessionID string) sfu.Session {
 		return s
 	}
 
-	s := sfu.NewSession(sessionID, e.datachannels, e.w).(*Session)
+	s := NewSession(sessionID, e.datachannels, e.w)
 	s.OnClose(func() {
 		e.onSessionClosed(sessionID)
 	})
 	prometheusGaugeSessions.Inc()
 
-	e.localSessions[sessionID] = s
-	return s
+	e.localSessions[sessionID] = &s
+	return &s
 }
 
 func (e *etcdCoordinator) GetSession(sid string) (sfu.Session, sfu.WebRTCTransportConfig) {
