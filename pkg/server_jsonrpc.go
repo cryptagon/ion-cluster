@@ -29,10 +29,18 @@ type Trickle struct {
 	Candidate webrtc.ICECandidateInit `json:"candidate"`
 }
 
+// Presence contains metadata for every peerID (can be used for mapping userIDs to streams, stream types, etc)
+type Presence struct {
+	Revision uint64                 `json:"revision"`
+	Meta     map[string]interface{} `json:"meta"`
+}
+
 type JSONSignal struct {
 	mu sync.Mutex
 	c  coordinator
 	*sfu.PeerLocal
+
+	sid string
 }
 
 // Handle incoming RPC call events like join, answer, offer and trickle
@@ -106,6 +114,30 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			}
 		}
 
+		s, _ := p.c.GetSession(join.SID)
+		session := s.(*Session)
+
+		listen := make(chan Broadcast)
+		session.BroadcastAddListener(p.ID(), listen)
+
+		p.sid = join.SID
+
+		stop := conn.DisconnectNotify()
+		go func() {
+			log.Info("peer starting broadcast listener")
+			for {
+				select {
+				case msg := <-listen:
+					log.Info("peer got broadcast", "id", p.ID(), "msg", msg)
+					conn.Notify(ctx, msg.method, msg.params)
+				case <-stop:
+					session.BroadcastRemoveListener(p.ID())
+					session.UpdatePresenceMetaForPeer(p.ID(), nil)
+					return
+				}
+			}
+		}()
+
 		_ = conn.Reply(ctx, req.ID, answer)
 
 	case "offer":
@@ -151,6 +183,23 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		if err != nil {
 			replyError(err)
 		}
+
+	case "presence_set":
+		if p.sid == "" {
+			replyError(fmt.Errorf("cannot update presence for peer not in any session"))
+			break
+		}
+		var meta map[string]interface{}
+		err := json.Unmarshal(*req.Params, &meta)
+		if err != nil {
+			log.Error(err, "presence: error parsing metadata")
+			replyError(err)
+			break
+		}
+
+		s, _ := p.c.GetSession(p.sid)
+		session := s.(*Session)
+		session.UpdatePresenceMetaForPeer(p.ID(), meta)
 
 	case "ping":
 		_ = conn.Reply(ctx, req.ID, "pong")
