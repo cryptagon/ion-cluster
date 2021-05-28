@@ -73,7 +73,6 @@ func (s *Session) Broadcast(msg Broadcast) {
 			log.V(4).Info("wrote broadcast", "msg", msg)
 		default:
 			log.Error(nil, "couldn't write broadcast to channel, removing", "id", id)
-			delete(s.broadcastListeners, id)
 		}
 	}
 }
