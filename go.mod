@@ -3,7 +3,7 @@ module github.com/pion/ion-cluster
 go 1.15
 
 //replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu master-tandem
-replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.10.4-0.20210518234538-0fe209599f01
+//replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.10.4-0.20210518234538-0fe209599f01
 
 // replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 
@@ -23,7 +23,7 @@ require (
 	github.com/pborman/uuid v1.2.1
 	github.com/pion/interceptor v0.0.12
 	github.com/pion/ion-log v1.0.1
-	github.com/pion/ion-sfu v1.10.3
+	github.com/pion/ion-sfu v1.10.4
 	github.com/pion/quic v0.1.4 // indirect
 	github.com/pion/rtcp v1.2.6
 	github.com/pion/sdp/v2 v2.4.0
