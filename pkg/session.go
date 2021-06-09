@@ -3,6 +3,7 @@ package cluster
 import (
 	"sync"
 
+	"github.com/getlantern/deepcopy"
 	sfu "github.com/pion/ion-sfu/pkg/sfu"
 )
 
@@ -42,11 +43,14 @@ func (s *Session) UpdatePresenceMetaForPeer(peerID string, meta interface{}) {
 		delete(s.presence, peerID)
 	}
 
+	currentPresence := make(map[string]interface{})
+	deepcopy.Copy(&currentPresence, s.presence)
+
 	msg := Broadcast{
 		method: "presence",
 		params: Presence{
 			Revision: s.presenceRevision,
-			Meta:     s.presence,
+			Meta:     currentPresence,
 		},
 	}
 
