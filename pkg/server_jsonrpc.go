@@ -131,7 +131,6 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 					log.Info("peer got broadcast", "id", p.ID(), "msg", msg)
 					conn.Notify(ctx, msg.method, msg.params)
 				case <-stop:
-					close(listen)
 					session.BroadcastRemoveListener(p.ID())
 					session.UpdatePresenceMetaForPeer(p.ID(), nil)
 					log.Info("peer broadcast listener closed", "id", p.ID())
