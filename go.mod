@@ -4,8 +4,8 @@ go 1.15
 
 //replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu master-tandem
 
-replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.10.4-0.20210812141925-2f6ac197e9c0
-replace github.com/pion/webrtc/v3 => github.com/billylindeman/webrtc/v3 v3.1.0-beta.5
+replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.10.5-tandem
+replace github.com/pion/webrtc/v3 => github.com/billylindeman/webrtc/v3 v3.1.0-beta.6
 
 //replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 //replace github.com/pion/webrtc/v3 => /Users/billy/Development/go/src/github.com/pion/webrtc
