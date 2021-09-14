@@ -4,8 +4,9 @@ go 1.15
 
 //replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu master-tandem
 
-replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.10.5-tandem
-replace github.com/pion/webrtc/v3 => github.com/billylindeman/webrtc/v3 v3.1.0-beta.6
+replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.20.9-0.20210914185339-660332decf00
+
+replace github.com/pion/webrtc/v3 => github.com/billylindeman/webrtc/v3 v3.1.0-beta.9
 
 //replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 //replace github.com/pion/webrtc/v3 => /Users/billy/Development/go/src/github.com/pion/webrtc
@@ -18,21 +19,21 @@ require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/envoyproxy/go-control-plane v0.9.4 // indirect
 	github.com/getlantern/deepcopy v0.0.0-20160317154340-7f45deb8130a
-	github.com/go-logr/logr v0.4.0
+	github.com/go-logr/logr v1.0.0
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/koding/websocketproxy v0.0.0-20181220232114-7ed82d81a28c
 	github.com/lucsky/cuid v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/uuid v1.2.1
-	github.com/pion/interceptor v0.0.15
+	github.com/pion/interceptor v0.0.19
 	github.com/pion/ion-log v1.0.1
 	github.com/pion/ion-sfu v1.10.7
 	github.com/pion/quic v0.1.4 // indirect
-	github.com/pion/rtcp v1.2.6
+	github.com/pion/rtcp v1.2.7
 	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
-	github.com/pion/webrtc/v3 v3.1.0-beta.3
+	github.com/pion/webrtc/v3 v3.1.0-beta.8
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
@@ -45,4 +46,5 @@ require (
 	k8s.io/api v0.20.4
 	k8s.io/apimachinery v0.20.4
 	k8s.io/client-go v0.20.4
+	k8s.io/klog/v2 v2.20.0
 )
