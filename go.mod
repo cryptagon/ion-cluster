@@ -3,7 +3,7 @@ module github.com/pion/ion-cluster
 go 1.15
 
 //replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu master-tandem
-replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.20.16-tandem-20211202
+replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.20.9-tandem-20211001
 
 replace github.com/pion/webrtc/v3 => github.com/billylindeman/webrtc/v3 v3.1.0-tandem-2
 

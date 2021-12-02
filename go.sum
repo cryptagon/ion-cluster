@@ -219,6 +219,8 @@ github.com/cryptagon/ion-sfu v1.10.5-tandem h1:8YkQv35VAus4Qu7qOPiR+UH7xTK0umT3Y
 github.com/cryptagon/ion-sfu v1.10.5-tandem/go.mod h1:on6UJeJeBY38nHMo86TIOeStM9DKiAqRoL00/YDJN2M=
 github.com/cryptagon/ion-sfu v1.20.9-0.20210914185339-660332decf00 h1:E9bI+zq4/OzFpybiUjWoQlK45KWFe6yJ0noozei5Wj0=
 github.com/cryptagon/ion-sfu v1.20.9-0.20210914185339-660332decf00/go.mod h1:nXAtt/d2m4t3BnprZrXEAtm/HvBxWe9c/apRriU0eJY=
+github.com/cryptagon/ion-sfu v1.20.9-tandem-20211001 h1:/UUFEEyAmH6vLLrhxEdytnBVAtvP4db5iyXbTYOR+IU=
+github.com/cryptagon/ion-sfu v1.20.9-tandem-20211001/go.mod h1:Rhx3pQmN+kJhtfzK1wXpn0m2rVmoJ29+ltCXWST+kow=
 github.com/cryptagon/ion-sfu v1.20.16-tandem-20211202 h1:8PURVNKi1x+nn1DMjOjyttGH6Uho96I2C8B/jTgYdCE=
 github.com/cryptagon/ion-sfu v1.20.16-tandem-20211202/go.mod h1:HW3HDYKtHkOuqstshJcrVQbVkjyfa/8lKE8hX1TuMDI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
