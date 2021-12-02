@@ -117,7 +117,7 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 		s, _ := p.c.GetSession(join.SID)
 		session := s.(*Session)
 
-		listen := make(chan Broadcast)
+		listen := make(chan Broadcast, 32)
 		session.BroadcastAddListener(p.ID(), listen)
 
 		p.sid = join.SID
