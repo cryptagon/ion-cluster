@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/koding/websocketproxy"
 
-	"github.com/pion/ion-sfu/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/sfu"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 

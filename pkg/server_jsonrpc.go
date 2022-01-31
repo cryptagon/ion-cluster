@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/pion/ion-sfu/pkg/sfu"
 	"github.com/pion/webrtc/v3"
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -38,7 +37,7 @@ type Presence struct {
 type JSONSignal struct {
 	mu sync.Mutex
 	c  coordinator
-	*sfu.PeerLocal
+	*PeerLocal
 
 	sid string
 }

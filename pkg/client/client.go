@@ -2,11 +2,11 @@ package client
 
 import (
 	"github.com/pion/interceptor"
-	logr "github.com/pion/ion-sfu/pkg/logger"
+	logr "github.com/pion/ion-cluster/pkg/logger"
 	"github.com/pion/webrtc/v3"
 )
 
-var log = logr.New().WithName("client")
+var log = logr.GetLogger().WithName("client")
 
 const (
 	rolePublish   int = 0

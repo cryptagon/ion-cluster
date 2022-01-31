@@ -6,9 +6,7 @@ import (
 	"sync"
 
 	"github.com/pborman/uuid"
-	"github.com/pion/ion-sfu/pkg/buffer"
-	"github.com/pion/ion-sfu/pkg/middlewares/datachannel"
-	"github.com/pion/ion-sfu/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/sfu/buffer"
 )
 
 var (
@@ -26,7 +24,7 @@ type sessionMeta struct {
 // and providing rpc connections to other nodes
 type coordinator interface {
 	getOrCreateSession(sessionID string) (*sessionMeta, error)
-	sfu.SessionProvider
+	SessionProvider
 }
 
 // NewCoordinator configures coordinator for this node
@@ -45,23 +43,23 @@ type localCoordinator struct {
 	nodeEndpoint string
 
 	mu           sync.Mutex
-	w            sfu.WebRTCTransportConfig
+	w            WebRTCTransportConfig
 	sessions     map[string]*Session
-	datachannels []*sfu.Datachannel
+	datachannels []*Datachannel
 }
 
 func newCoordinatorLocal(conf RootConfig) (coordinator, error) {
 	if conf.SFU.BufferFactory == nil {
 		conf.SFU.BufferFactory = buffer.NewBufferFactory(conf.SFU.Router.MaxPacketTrack, log.WithName("buffer"))
 	}
-	w := sfu.NewWebRTCTransportConfig(conf.SFU)
-	dc := &sfu.Datachannel{Label: sfu.APIChannelLabel}
-	dc.Use(datachannel.SubscriberAPI)
+	w := NewWebRTCTransportConfig(conf.SFU)
+	dc := &Datachannel{Label: APIChannelLabel}
+	dc.Use(SubscriberAPI)
 
 	return &localCoordinator{
 		nodeID:       uuid.New(),
 		nodeEndpoint: conf.Endpoint(),
-		datachannels: []*sfu.Datachannel{dc},
+		datachannels: []*Datachannel{dc},
 		sessions:     make(map[string]*Session),
 		w:            w,
 	}, nil
@@ -85,7 +83,7 @@ func (c *localCoordinator) ensureSession(sessionID string) *Session {
 	return &s
 }
 
-func (c *localCoordinator) GetSession(sid string) (sfu.Session, sfu.WebRTCTransportConfig) {
+func (c *localCoordinator) GetSession(sid string) (ISession, WebRTCTransportConfig) {
 	return c.ensureSession(sid), c.w
 }
 

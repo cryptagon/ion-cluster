@@ -16,12 +16,12 @@ import (
 	"time"
 	"unsafe"
 
-	logr "github.com/pion/ion-sfu/pkg/logger"
+	logr "github.com/pion/ion-cluster/pkg/logger"
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/media"
 )
 
-var log = logr.New().WithName("gst")
+var log = logr.GetLogger().WithName("gst")
 
 func MainLoop() {
 	C.gstreamer_start_mainloop()

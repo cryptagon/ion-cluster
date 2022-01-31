@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cluster "github.com/pion/ion-cluster/pkg"
-
 	"github.com/gorilla/websocket"
+	cluster "github.com/pion/ion-cluster/pkg"
 	"github.com/pion/webrtc/v3"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"

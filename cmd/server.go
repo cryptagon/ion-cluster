@@ -8,7 +8,7 @@ import (
 	"time"
 
 	cluster "github.com/pion/ion-cluster/pkg"
-	"github.com/pion/ion-sfu/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/sfu"
 	"github.com/spf13/cobra"
 )
 
