@@ -1,4 +1,4 @@
-package cluster
+package rtc
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/lucsky/cuid"
+	"github.com/pion/ion-cluster/pkg/logger"
 
 	"github.com/pion/webrtc/v3"
 )
@@ -26,7 +27,7 @@ var (
 
 type Peer interface {
 	ID() string
-	Session() Session
+	Session() ISession
 	Publisher() *Publisher
 	Subscriber() *Subscriber
 	Close() error
@@ -49,7 +50,7 @@ type JoinConfig struct {
 // SessionProvider provides the SessionLocal to the sfu.Peer
 // This allows the sfu.SFU{} implementation to be customized / wrapped by another package
 type SessionProvider interface {
-	GetSession(sid string) (Session, WebRTCTransportConfig)
+	GetSession(sid string) (ISession, WebRTCTransportConfig)
 }
 
 type ChannelAPIMessage struct {
@@ -62,7 +63,7 @@ type PeerLocal struct {
 	sync.Mutex
 	id       string
 	closed   atomicBool
-	session  Session
+	session  ISession
 	provider SessionProvider
 
 	publisher  *Publisher
@@ -91,7 +92,7 @@ func (p *PeerLocal) Join(sid, uid string, config ...JoinConfig) error {
 	}
 
 	if p.session != nil {
-		log.V(1).Info("peer already exists", "session_id", sid, "peer_id", p.id, "publisher_id", p.publisher.id)
+		logger.Infow("peer already exists", "session_id", sid, "peer_id", p.id, "publisher_id", p.publisher.id)
 		return ErrTransportExists
 	}
 
@@ -121,22 +122,22 @@ func (p *PeerLocal) Join(sid, uid string, config ...JoinConfig) error {
 				return
 			}
 
-			log.V(1).Info("Negotiation needed", "peer_id", p.id)
+			logger.Infow("Negotiation needed", "peer_id", p.id)
 			offer, err := p.subscriber.CreateOffer()
 			if err != nil {
-				log.Error(err, "CreateOffer error")
+				logger.Errorw("CreateOffer error", err)
 				return
 			}
 
 			p.remoteAnswerPending = true
 			if p.OnOffer != nil && !p.closed.get() {
-				log.V(0).Info("Send offer", "peer_id", p.id)
+				logger.Infow("Send offer", "peer_id", p.id)
 				p.OnOffer(&offer)
 			}
 		})
 
 		p.subscriber.OnICECandidate(func(c *webrtc.ICECandidate) {
-			log.V(1).Info("On subscriber ice candidate called for peer", "peer_id", p.id)
+			logger.Infow("On subscriber ice candidate called for peer", "peer_id", p.id)
 			if c == nil {
 				return
 			}
@@ -162,7 +163,7 @@ func (p *PeerLocal) Join(sid, uid string, config ...JoinConfig) error {
 		}
 
 		p.publisher.OnICECandidate(func(c *webrtc.ICECandidate) {
-			log.V(1).Info("on publisher ice candidate called for peer", "peer_id", p.id)
+			logger.Infow("on publisher ice candidate called for peer", "peer_id", p.id)
 			if c == nil {
 				return
 			}
@@ -182,7 +183,7 @@ func (p *PeerLocal) Join(sid, uid string, config ...JoinConfig) error {
 
 	p.session.AddPeer(p)
 
-	log.V(0).Info("PeerLocal join SessionLocal", "peer_id", p.id, "session_id", sid)
+	logger.Infow("PeerLocal join SessionLocal", "peer_id", p.id, "session_id", sid)
 
 	if !conf.NoSubscribe {
 		p.session.Subscribe(p)
@@ -196,7 +197,7 @@ func (p *PeerLocal) Answer(sdp webrtc.SessionDescription) (*webrtc.SessionDescri
 		return nil, ErrNoTransportEstablished
 	}
 
-	log.V(0).Info("PeerLocal got offer", "peer_id", p.id)
+	logger.Infow("PeerLocal got offer", "peer_id", p.id)
 
 	if p.publisher.SignalingState() != webrtc.SignalingStateStable {
 		return nil, ErrOfferIgnored
@@ -207,7 +208,7 @@ func (p *PeerLocal) Answer(sdp webrtc.SessionDescription) (*webrtc.SessionDescri
 		return nil, fmt.Errorf("error creating answer: %v", err)
 	}
 
-	log.V(0).Info("PeerLocal send answer", "peer_id", p.id)
+	logger.Infow("PeerLocal send answer", "peer_id", p.id)
 
 	return &answer, nil
 }
@@ -220,7 +221,7 @@ func (p *PeerLocal) SetRemoteDescription(sdp webrtc.SessionDescription) error {
 	p.Lock()
 	defer p.Unlock()
 
-	log.V(0).Info("PeerLocal got answer", "peer_id", p.id)
+	logger.Infow("PeerLocal got answer", "peer_id", p.id)
 	if err := p.subscriber.SetRemoteDescription(sdp); err != nil {
 		return fmt.Errorf("setting remote description: %w", err)
 	}
@@ -240,7 +241,7 @@ func (p *PeerLocal) Trickle(candidate webrtc.ICECandidateInit, target int) error
 	if p.subscriber == nil || p.publisher == nil {
 		return ErrNoTransportEstablished
 	}
-	log.V(0).Info("PeerLocal trickle", "peer_id", p.id)
+	logger.Infow("PeerLocal trickle", "peer_id", p.id)
 	switch target {
 	case publisher:
 		if err := p.publisher.AddICECandidate(candidate); err != nil {
@@ -301,7 +302,7 @@ func (p *PeerLocal) Publisher() *Publisher {
 	return p.publisher
 }
 
-func (p *PeerLocal) Session() Session {
+func (p *PeerLocal) Session() ISession {
 	return p.session
 }
 

@@ -1,4 +1,4 @@
-package cluster
+package rtc
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/bep/debounce"
+	"github.com/pion/ion-cluster/pkg/logger"
 	"github.com/pion/ion-cluster/pkg/sfu"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
@@ -35,14 +36,14 @@ type Subscriber struct {
 func NewSubscriber(id string, cfg WebRTCTransportConfig) (*Subscriber, error) {
 	me, err := getSubscriberMediaEngine()
 	if err != nil {
-		log.Error(err, "NewPeer error")
+		logger.Errorw("NewPeer error", err)
 		return nil, errPeerConnectionInitFailed
 	}
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(cfg.Setting))
 	pc, err := api.NewPeerConnection(cfg.Configuration)
 
 	if err != nil {
-		log.Error(err, "NewPeer error")
+		logger.Errorw("NewPeer error", err)
 		return nil, errPeerConnectionInitFailed
 	}
 
@@ -50,21 +51,21 @@ func NewSubscriber(id string, cfg WebRTCTransportConfig) (*Subscriber, error) {
 		id:              id,
 		me:              me,
 		pc:              pc,
-		tracks:          make(map[string][]*DownTrack),
+		tracks:          make(map[string][]*sfu.DownTrack),
 		channels:        make(map[string]*webrtc.DataChannel),
 		noAutoSubscribe: false,
 	}
 
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		log.V(1).Info("ice connection status", "state", connectionState)
+		logger.Infow("ice connection status", "state", connectionState)
 		switch connectionState {
 		case webrtc.ICEConnectionStateFailed:
 			fallthrough
 		case webrtc.ICEConnectionStateClosed:
 			s.closeOnce.Do(func() {
-				log.V(1).Info("webrtc ice closed", "peer_id", s.id)
+				logger.Infow("webrtc ice closed", "peer_id", s.id)
 				if err := s.Close(); err != nil {
-					log.Error(err, "webrtc transport close err")
+					logger.Errorw("webrtc transport close err", err)
 				}
 			})
 		}
@@ -142,18 +143,18 @@ func (s *Subscriber) AddICECandidate(candidate webrtc.ICECandidateInit) error {
 	return nil
 }
 
-func (s *Subscriber) AddDownTrack(streamID string, downTrack *DownTrack) {
+func (s *Subscriber) AddDownTrack(streamID string, downTrack *sfu.DownTrack) {
 	s.Lock()
 	defer s.Unlock()
 	if dt, ok := s.tracks[streamID]; ok {
 		dt = append(dt, downTrack)
 		s.tracks[streamID] = dt
 	} else {
-		s.tracks[streamID] = []*DownTrack{downTrack}
+		s.tracks[streamID] = []*sfu.DownTrack{downTrack}
 	}
 }
 
-func (s *Subscriber) RemoveDownTrack(streamID string, downTrack *DownTrack) {
+func (s *Subscriber) RemoveDownTrack(streamID string, downTrack *sfu.DownTrack) {
 	s.Lock()
 	defer s.Unlock()
 	if dts, ok := s.tracks[streamID]; ok {
@@ -183,7 +184,7 @@ func (s *Subscriber) AddDataChannel(label string) (*webrtc.DataChannel, error) {
 
 	dc, err := s.pc.CreateDataChannel(label, &webrtc.DataChannelInit{})
 	if err != nil {
-		log.Error(err, "dc creation error")
+		logger.Errorw("dc creation error", err)
 		return nil, errCreatingDataChannel
 	}
 
@@ -195,13 +196,13 @@ func (s *Subscriber) AddDataChannel(label string) (*webrtc.DataChannel, error) {
 // SetRemoteDescription sets the SessionDescription of the remote peer
 func (s *Subscriber) SetRemoteDescription(desc webrtc.SessionDescription) error {
 	if err := s.pc.SetRemoteDescription(desc); err != nil {
-		log.Error(err, "SetRemoteDescription error")
+		logger.Errorw("SetRemoteDescription error", err)
 		return err
 	}
 
 	for _, c := range s.candidates {
 		if err := s.pc.AddICECandidate(c); err != nil {
-			log.Error(err, "Add subscriber ice candidate to peer err", "peer_id", s.id)
+			logger.Errorw("Add subscriber ice candidate to peer err", err, "peer_id", s.id)
 		}
 	}
 	s.candidates = nil
@@ -219,10 +220,10 @@ func (s *Subscriber) GetDatachannel(label string) *webrtc.DataChannel {
 	return s.DataChannel(label)
 }
 
-func (s *Subscriber) DownTracks() []*DownTrack {
+func (s *Subscriber) DownTracks() []*sfu.DownTrack {
 	s.RLock()
 	defer s.RUnlock()
-	var downTracks []*DownTrack
+	var downTracks []*sfu.DownTrack
 	for _, tracks := range s.tracks {
 		downTracks = append(downTracks, tracks...)
 	}
@@ -258,9 +259,9 @@ func (s *Subscriber) downTracksReports() {
 		s.RLock()
 		for _, dts := range s.tracks {
 			for _, dt := range dts {
-				if !dt.bound.get() {
-					continue
-				}
+				// if !dt.bound.get() {
+				// 	continue
+				// }
 				if sr := dt.CreateSenderReport(); sr != nil {
 					r = append(r, sr)
 				}
@@ -282,7 +283,7 @@ func (s *Subscriber) downTracksReports() {
 				if err == io.EOF || err == io.ErrClosedPipe {
 					return
 				}
-				log.Error(err, "Sending downtrack reports err")
+				logger.Errorw("Sending downtrack reports err", err)
 			}
 			r = r[:0]
 		}
@@ -296,10 +297,12 @@ func (s *Subscriber) sendStreamDownTracksReports(streamID string) {
 	s.RLock()
 	dts := s.tracks[streamID]
 	for _, dt := range dts {
-		if !dt.bound.get() {
-			continue
+		//if !dt.bound.get() {
+		//	continue
+		//}
+		if sdc := dt.CreateSourceDescriptionChunks(); sdc != nil {
+			sd = append(sd, sdc...)
 		}
-		sd = append(sd, dt.CreateSourceDescriptionChunks()...)
 	}
 	s.RUnlock()
 	if len(sd) == 0 {
@@ -311,7 +314,7 @@ func (s *Subscriber) sendStreamDownTracksReports(streamID string) {
 		i := 0
 		for {
 			if err := s.pc.WriteRTCP(r); err != nil {
-				log.Error(err, "Sending track binding reports err")
+				logger.Errorw("Sending track binding reports err", err)
 			}
 			if i > 5 {
 				return

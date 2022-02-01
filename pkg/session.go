@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/getlantern/deepcopy"
-	"github.com/pion/ion-cluster/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/rtc"
 )
 
 type Broadcast struct {
@@ -19,16 +19,16 @@ type Session struct {
 
 	broadcastListeners map[string]chan<- Broadcast
 
-	SessionLocal
+	rtc.SessionLocal
 }
 
-func NewSession(id string, dcs []*Datachannel, cfg WebRTCTransportConfig) Session {
+func NewSession(id string, dcs []*rtc.Datachannel, cfg rtc.WebRTCTransportConfig) Session {
 	return Session{
 		sync.Mutex{},
 		make(map[string]interface{}),
 		0,
 		make(map[string]chan<- Broadcast),
-		*NewSessionLocal(id, dcs, cfg).(*sfu.SessionLocal),
+		*rtc.NewSessionLocal(id, dcs, cfg).(*rtc.SessionLocal),
 	}
 }
 

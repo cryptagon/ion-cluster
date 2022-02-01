@@ -1,4 +1,4 @@
-package cluster
+package rtc
 
 import (
 	"sync"
@@ -6,6 +6,7 @@ import (
 
 	sfu "github.com/pion/ion-cluster/pkg/sfu"
 
+	"github.com/pion/ion-cluster/pkg/logger"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -16,7 +17,7 @@ type Publisher struct {
 	cfg *WebRTCTransportConfig
 
 	router     Router
-	session    Session
+	session    ISession
 	tracks     []PublisherTrack
 	candidates []webrtc.ICECandidateInit
 
@@ -28,14 +29,14 @@ type Publisher struct {
 
 type PublisherTrack struct {
 	Track    *webrtc.TrackRemote
-	Receiver sfu.Receiver
+	Receiver sfu.TrackReceiver
 }
 
 // NewPublisher creates a new Publisher
-func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publisher, error) {
+func NewPublisher(id string, session ISession, cfg *WebRTCTransportConfig) (*Publisher, error) {
 	me, err := getPublisherMediaEngine()
 	if err != nil {
-		log.Error(err, "NewPeer error", "peer_id", id)
+		logger.Errorw("NewPeer error", err, "peer_id", id)
 		return nil, errPeerConnectionInitFailed
 	}
 
@@ -43,7 +44,7 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 	pc, err := api.NewPeerConnection(cfg.Configuration)
 
 	if err != nil {
-		log.Error(err, "NewPeer error", "peer_id", id)
+		logger.Errorw("NewPeer error", err, "peer_id", id)
 		return nil, errPeerConnectionInitFailed
 	}
 
@@ -56,7 +57,7 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 	}
 
 	pc.OnTrack(func(track *webrtc.TrackRemote, receiver *webrtc.RTPReceiver) {
-		log.V(1).Info("Peer got remote track id",
+		logger.Infow("Peer got remote track id",
 			"peer_id", p.id,
 			"track_id", track.ID(),
 			"mediaSSRC", track.SSRC(),
@@ -68,11 +69,11 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 		if pub {
 			p.session.Publish(p.router, r)
 			p.mu.Lock()
-			publisherTrack := PublisherTrack{track, r, true}
+			publisherTrack := PublisherTrack{track, r}
 			p.tracks = append(p.tracks, publisherTrack)
 			//for _, rp := range p.relayPeers {
 			//	if err = p.createRelayTrack(track, r, rp.peer); err != nil {
-			//		log.V(1).Error(err, "Creating relay track.", "peer_id", p.id)
+			//		logger.V(1).Error(err, "Creating relay track.", "peer_id", p.id)
 			//	}
 			//}
 			p.mu.Unlock()
@@ -81,7 +82,7 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 			}
 		} else {
 			p.mu.Lock()
-			p.tracks = append(p.tracks, PublisherTrack{track, r, false})
+			p.tracks = append(p.tracks, PublisherTrack{track, r})
 			p.mu.Unlock()
 		}
 	})
@@ -95,12 +96,12 @@ func NewPublisher(id string, session Session, cfg *WebRTCTransportConfig) (*Publ
 	})
 
 	pc.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
-		log.V(1).Info("ice connection status", "state", connectionState)
+		logger.Infow("ice connection status", "state", connectionState)
 		switch connectionState {
 		case webrtc.ICEConnectionStateFailed:
 			fallthrough
 		case webrtc.ICEConnectionStateClosed:
-			log.V(1).Info("webrtc ice closed", "peer_id", p.id)
+			logger.Infow("webrtc ice closed", "peer_id", p.id)
 			p.Close()
 		}
 
@@ -121,7 +122,7 @@ func (p *Publisher) Answer(offer webrtc.SessionDescription) (webrtc.SessionDescr
 
 	for _, c := range p.candidates {
 		if err := p.pc.AddICECandidate(c); err != nil {
-			log.Error(err, "Add publisher ice candidate to peer err", "peer_id", p.id)
+			logger.Errorw("Add publisher ice candidate to peer err", err, "peer_id", p.id)
 		}
 	}
 	p.candidates = nil
@@ -146,7 +147,7 @@ func (p *Publisher) Close() {
 	p.closeOnce.Do(func() {
 		p.router.Stop()
 		if err := p.pc.Close(); err != nil {
-			log.Error(err, "webrtc transport close err")
+			logger.Errorw("webrtc transport close err", err)
 		}
 	})
 }

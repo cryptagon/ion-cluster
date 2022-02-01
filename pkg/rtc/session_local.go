@@ -1,10 +1,12 @@
-package cluster
+package rtc
 
 import (
 	"encoding/json"
 	"sync"
 	"time"
 
+	"github.com/pion/ion-cluster/pkg/logger"
+	sfu "github.com/pion/ion-cluster/pkg/sfu"
 	"github.com/pion/webrtc/v3"
 )
 
@@ -12,7 +14,7 @@ import (
 // are automatically subscribed to each other.
 type ISession interface {
 	ID() string
-	Publish(router Router, r Receiver)
+	Publish(router Router, r sfu.TrackReceiver)
 	Subscribe(peer Peer)
 	AddPeer(peer Peer)
 	GetPeer(peerID string) Peer
@@ -43,7 +45,7 @@ const (
 )
 
 // NewSession creates a new SessionLocal
-func NewSessionLocal(id string, dcs []*Datachannel, cfg WebRTCTransportConfig) Session {
+func NewSessionLocal(id string, dcs []*Datachannel, cfg WebRTCTransportConfig) ISession {
 	s := &SessionLocal{
 		id:           id,
 		peers:        make(map[string]Peer),
@@ -91,7 +93,7 @@ func (s *SessionLocal) GetPeer(peerID string) Peer {
 // RemovePeer removes Peer from the SessionLocal
 func (s *SessionLocal) RemovePeer(p Peer) {
 	pid := p.ID()
-	log.V(0).Info("RemovePeer from SessionLocal", "peer_id", pid, "session_id", s.id)
+	logger.Infow("RemovePeer from SessionLocal", "peer_id", pid, "session_id", s.id)
 	s.mu.Lock()
 	if s.peers[pid] == p {
 		delete(s.peers, pid)
@@ -136,7 +138,7 @@ func (s *SessionLocal) AddDatachannel(owner string, dc *webrtc.DataChannel) {
 		ndc, err := peer.Subscriber().AddDataChannel(label)
 
 		if err != nil {
-			log.Error(err, "error adding datachannel")
+			logger.Errorw("error adding datachannel", err)
 			continue
 		}
 
@@ -152,11 +154,11 @@ func (s *SessionLocal) AddDatachannel(owner string, dc *webrtc.DataChannel) {
 			//for _, rdc := range peer.Publisher().GetRelayedDataChannels(label) {
 			//if msg.IsString {
 			//if err = rdc.SendText(string(msg.Data)); err != nil {
-			//log.Error(err, "Sending dc message err")
+			//logger.Error(err, "Sending dc message err")
 			//}
 			//} else {
 			//if err = rdc.Send(msg.Data); err != nil {
-			//log.Error(err, "Sending dc message err")
+			//logger.Error(err, "Sending dc message err")
 			//}
 			//}
 			//}
@@ -169,17 +171,17 @@ func (s *SessionLocal) AddDatachannel(owner string, dc *webrtc.DataChannel) {
 
 // Publish will add a Sender to all peers in current SessionLocal from given
 // Receiver
-func (s *SessionLocal) Publish(router Router, r Receiver) {
+func (s *SessionLocal) Publish(router Router, r sfu.TrackReceiver) {
 	for _, p := range s.Peers() {
 		// Don't sub to self
 		if router.ID() == p.ID() || p.Subscriber() == nil {
 			continue
 		}
 
-		log.V(0).Info("Publishing track to peer", "peer_id", p.ID())
+		logger.Infow("Publishing track to peer", "peer_id", p.ID())
 
 		if err := router.AddDownTracks(p.Subscriber(), r); err != nil {
-			log.Error(err, "Error subscribing transport to Router")
+			logger.Errorw("Error subscribing transport to Router", err)
 			continue
 		}
 	}
@@ -203,7 +205,7 @@ func (s *SessionLocal) Subscribe(peer Peer) {
 	for _, label := range fdc {
 		dc, err := peer.Subscriber().AddDataChannel(label)
 		if err != nil {
-			log.Error(err, "error adding datachannel")
+			logger.Errorw("error adding datachannel", err)
 			continue
 		}
 		l := label
@@ -214,11 +216,11 @@ func (s *SessionLocal) Subscribe(peer Peer) {
 			//for _, rdc := range peer.Publisher().GetRelayedDataChannels(l) {
 			//if msg.IsString {
 			//if err = rdc.SendText(string(msg.Data)); err != nil {
-			//log.Error(err, "Sending dc message err")
+			//logger.Error(err, "Sending dc message err")
 			//}
 			//} else {
 			//if err = rdc.Send(msg.Data); err != nil {
-			//log.Error(err, "Sending dc message err")
+			//logger.Error(err, "Sending dc message err")
 			//}
 			//}
 
@@ -231,20 +233,10 @@ func (s *SessionLocal) Subscribe(peer Peer) {
 	for _, p := range peers {
 		err := p.Publisher().GetRouter().AddDownTracks(peer.Subscriber(), nil)
 		if err != nil {
-			log.Error(err, "Subscribing to Router err")
+			logger.Errorw("Subscribing to Router err", err)
 			continue
 		}
 	}
-
-	// Subscribe to relay streams
-	for _, p := range s.RelayPeers() {
-		err := p.GetRouter().AddDownTracks(peer.Subscriber(), nil)
-		if err != nil {
-			log.Error(err, "Subscribing to Router err")
-			continue
-		}
-	}
-
 	peer.Subscriber().negotiate()
 }
 
@@ -278,11 +270,11 @@ func (s *SessionLocal) FanOutMessage(origin, label string, msg webrtc.DataChanne
 	for _, dc := range dcs {
 		if msg.IsString {
 			if err := dc.SendText(string(msg.Data)); err != nil {
-				log.Error(err, "Sending dc message err")
+				logger.Errorw("Sending dc message err", err)
 			}
 		} else {
 			if err := dc.Send(msg.Data); err != nil {
-				log.Error(err, "Sending dc message err")
+				logger.Errorw("Sending dc message err", err)
 			}
 		}
 	}
@@ -315,7 +307,7 @@ func (s *SessionLocal) GetDataChannels(peerID, label string) []*webrtc.DataChann
 
 func (s *SessionLocal) audioLevelObserver(audioLevelInterval int) {
 	if audioLevelInterval <= 50 {
-		log.V(0).Info("Values near/under 20ms may return unexpected values")
+		logger.Infow("Values near/under 20ms may return unexpected values")
 	}
 	if audioLevelInterval == 0 {
 		audioLevelInterval = 1000
@@ -338,7 +330,7 @@ func (s *SessionLocal) audioLevelObserver(audioLevelInterval int) {
 
 		l, err := json.Marshal(&msg)
 		if err != nil {
-			log.Error(err, "Marshaling audio levels err")
+			logger.Errorw("Marshaling audio levels err", err)
 			continue
 		}
 
@@ -347,7 +339,7 @@ func (s *SessionLocal) audioLevelObserver(audioLevelInterval int) {
 
 		for _, ch := range dcs {
 			if err = ch.SendText(sl); err != nil {
-				log.Error(err, "Sending audio levels err")
+				logger.Errorw("Sending audio levels err", err)
 			}
 		}
 	}

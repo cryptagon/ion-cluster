@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pborman/uuid"
+	"github.com/pion/ion-cluster/pkg/rtc"
 	"github.com/pion/ion-cluster/pkg/sfu/buffer"
 	"google.golang.org/grpc"
 
@@ -21,8 +22,8 @@ type etcdCoordinator struct {
 	nodeEndpoint string
 	client       *clientv3.Client
 
-	w             WebRTCTransportConfig
-	datachannels  []*Datachannel
+	w             rtc.WebRTCTransportConfig
+	datachannels  []*rtc.Datachannel
 	localSessions map[string]*Session
 	sessionLeases map[string]context.CancelFunc
 }
@@ -41,9 +42,9 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 	if conf.SFU.BufferFactory == nil {
 		conf.SFU.BufferFactory = buffer.NewBufferFactory(conf.SFU.Router.MaxPacketTrack, log.WithName("buffer"))
 	}
-	w := NewWebRTCTransportConfig(conf.SFU)
-	dc := &Datachannel{Label: APIChannelLabel}
-	dc.Use(SubscriberAPI)
+	w := rtc.NewWebRTCTransportConfig(conf.SFU)
+	dc := &rtc.Datachannel{Label: rtc.APIChannelLabel}
+	dc.Use(rtc.SubscriberAPI)
 
 	log.Info("created etcdCoordinator")
 	return &etcdCoordinator{
@@ -51,7 +52,7 @@ func newCoordinatorEtcd(conf RootConfig) (*etcdCoordinator, error) {
 		nodeID:        uuid.New(),
 		nodeEndpoint:  conf.Endpoint(),
 		w:             w,
-		datachannels:  []*Datachannel{dc},
+		datachannels:  []*rtc.Datachannel{dc},
 		sessionLeases: make(map[string]context.CancelFunc),
 		localSessions: make(map[string]*Session),
 	}, nil
@@ -153,7 +154,7 @@ func (e *etcdCoordinator) ensureSession(sessionID string) *Session {
 	return &s
 }
 
-func (e *etcdCoordinator) GetSession(sid string) (ISession, WebRTCTransportConfig) {
+func (e *etcdCoordinator) GetSession(sid string) (rtc.ISession, rtc.WebRTCTransportConfig) {
 	return e.ensureSession(sid), e.w
 }
 

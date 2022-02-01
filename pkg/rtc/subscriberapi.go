@@ -1,4 +1,4 @@
-package cluster
+package rtc
 
 import (
 	"context"
@@ -99,7 +99,7 @@ func SubscriberAPI(next MessageProcessor) MessageProcessor {
 		}
 		// Publisher changing active layers
 		if srm.Layers != nil && len(srm.Layers) > 0 {
-			layers, err := transformLayers(srm.Layers)
+			_layers, err := transformLayers(srm.Layers)
 			if err != nil {
 				sfu.Logger.Error(err, "error reading layers")
 				next.Process(ctx, args)

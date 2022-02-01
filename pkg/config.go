@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pion/ice"
+	"github.com/pion/ice/v2"
 	"github.com/pion/ion-cluster/pkg/logger"
-	"github.com/pion/ion-cluster/pkg/sfu/buffer"
+	"github.com/pion/ion-cluster/pkg/rtc"
 	"github.com/pion/ion-sfu/pkg/stats"
 	"github.com/pion/webrtc/v3"
 )
@@ -24,72 +24,8 @@ func init() {
 // RootConfig is the root config read in from config.toml
 type RootConfig struct {
 	Signal      SignalConfig
-	SFU         SFUConfig
+	SFU         rtc.SFUConfig
 	Coordinator CoordinatorConfig
-}
-
-// ICEServerConfig defines parameters for ice servers
-type ICEServerConfig struct {
-	URLs       []string `mapstructure:"urls"`
-	Username   string   `mapstructure:"username"`
-	Credential string   `mapstructure:"credential"`
-}
-
-type Candidates struct {
-	IceLite    bool     `mapstructure:"icelite"`
-	NAT1To1IPs []string `mapstructure:"nat1to1"`
-}
-
-// WebRTCTransportConfig represents Configuration options
-type WebRTCTransportConfig struct {
-	Configuration webrtc.Configuration
-	Setting       webrtc.SettingEngine
-	Router        RouterConfig
-	BufferFactory *buffer.Factory
-}
-
-type WebRTCTimeoutsConfig struct {
-	ICEDisconnectedTimeout int `mapstructure:"disconnected"`
-	ICEFailedTimeout       int `mapstructure:"failed"`
-	ICEKeepaliveInterval   int `mapstructure:"keepalive"`
-}
-
-// WebRTCConfig defines parameters for ice
-type WebRTCConfig struct {
-	ICESinglePort int                  `mapstructure:"singleport"`
-	ICEPortRange  []uint16             `mapstructure:"portrange"`
-	ICEServers    []ICEServerConfig    `mapstructure:"iceserver"`
-	Candidates    Candidates           `mapstructure:"candidates"`
-	SDPSemantics  string               `mapstructure:"sdpsemantics"`
-	MDNS          bool                 `mapstructure:"mdns"`
-	Timeouts      WebRTCTimeoutsConfig `mapstructure:"timeouts"`
-}
-
-type RouterConfig struct {
-	WithStats           bool            `mapstructure:"withstats"`
-	MaxBandwidth        uint64          `mapstructure:"maxbandwidth"`
-	MaxPacketTrack      int             `mapstructure:"maxpackettrack"`
-	AudioLevelInterval  int             `mapstructure:"audiolevelinterval"`
-	AudioLevelThreshold uint8           `mapstructure:"audiolevelthreshold"`
-	AudioLevelFilter    int             `mapstructure:"audiolevelfilter"`
-	Simulcast           SimulcastConfig `mapstructure:"simulcast"`
-}
-
-type SimulcastConfig struct {
-	BestQualityFirst    bool `mapstructure:"bestqualityfirst"`
-	EnableTemporalLayer bool `mapstructure:"enabletemporallayer"`
-}
-
-// Config for base SFU
-type SFUConfig struct {
-	SFU struct {
-		Ballast   int64 `mapstructure:"ballast"`
-		WithStats bool  `mapstructure:"withstats"`
-	} `mapstructure:"sfu"`
-	WebRTC        WebRTCConfig `mapstructure:"webrtc"`
-	Router        RouterConfig `mapstructure:"Router"`
-	BufferFactory *buffer.Factory
-	TurnAuth      func(username string, realm string, srcAddr net.Addr) ([]byte, bool)
 }
 
 type CongestionControlConfig struct {
@@ -144,7 +80,7 @@ type CoordinatorConfig struct {
 }
 
 // NewWebRTCTransportConfig parses our settings and returns a usable WebRTCTransportConfig for creating PeerConnections
-func NewWebRTCTransportConfig(c SFUConfig) WebRTCTransportConfig {
+func NewWebRTCTransportConfig(c rtc.SFUConfig) rtc.WebRTCTransportConfig {
 	se := webrtc.SettingEngine{}
 	se.DisableMediaEngineCopy(true)
 
