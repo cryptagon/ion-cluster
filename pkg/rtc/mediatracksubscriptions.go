@@ -1,20 +1,17 @@
 package rtc
 
 import (
-	"context"
 	"errors"
 	"sync"
 	"time"
 
-	"github.com/livekit/protocol/logger"
+	"github.com/pion/ion-cluster/pkg/logger"
+	sfu "github.com/pion/ion-cluster/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/sfu/buffer"
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
 	"github.com/pion/webrtc/v3/pkg/rtcerr"
-
-	"github.com/livekit/livekit-server/pkg/rtc/types"
-	"github.com/livekit/livekit-server/pkg/sfu"
-	"github.com/livekit/livekit-server/pkg/sfu/buffer"
-	"github.com/livekit/livekit-server/pkg/telemetry"
 )
 
 const (
@@ -26,7 +23,7 @@ type MediaTrackSubscriptions struct {
 	params MediaTrackSubscriptionsParams
 
 	subscribedTracksMu sync.RWMutex
-	subscribedTracks   map[types.ParticipantID]types.SubscribedTrack // participantID => types.SubscribedTrack
+	subscribedTracks   map[types.ParticipantID]SubscribedTrack // participantID => SubscribedTrack
 
 	onNoSubscribers func()
 
@@ -40,13 +37,13 @@ type MediaTrackSubscriptions struct {
 }
 
 type MediaTrackSubscriptionsParams struct {
-	MediaTrack types.MediaTrack
+	MediaTrack *MediaTrack
 
 	BufferFactory    *buffer.Factory
 	ReceiverConfig   ReceiverConfig
 	SubscriberConfig DirectionConfig
 
-	Telemetry telemetry.TelemetryService
+	// Telemetry telemetry.TelemetryService
 
 	Logger logger.Logger
 }
@@ -54,7 +51,7 @@ type MediaTrackSubscriptionsParams struct {
 func NewMediaTrackSubscriptions(params MediaTrackSubscriptionsParams) *MediaTrackSubscriptions {
 	t := &MediaTrackSubscriptions{
 		params:                   params,
-		subscribedTracks:         make(map[types.ParticipantID]types.SubscribedTrack),
+		subscribedTracks:         make(map[types.ParticipantID]SubscribedTrack),
 		maxSubscriberQuality:     make(map[types.ParticipantID]types.VideoQuality),
 		maxSubscriberNodeQuality: make(map[string]types.VideoQuality),
 	}
@@ -95,7 +92,7 @@ func (t *MediaTrackSubscriptions) IsSubscriber(subID types.ParticipantID) bool {
 }
 
 // AddSubscriber subscribes sub to current mediaTrack
-func (t *MediaTrackSubscriptions) AddSubscriber(sub types.LocalParticipant, codec webrtc.RTPCodecCapability, wr WrappedReceiver) (*sfu.DownTrack, error) {
+func (t *MediaTrackSubscriptions) AddSubscriber(sub Peer, codec webrtc.RTPCodecCapability, wr WrappedReceiver) (*sfu.DownTrack, error) {
 	subscriberID := sub.ID()
 
 	t.subscribedTracksMu.Lock()
@@ -189,9 +186,9 @@ func (t *MediaTrackSubscriptions) AddSubscriber(sub types.LocalParticipant, code
 		go t.sendDownTrackBindingReports(sub)
 	})
 
-	trackID := t.params.MediaTrack.ID()
+	// trackID := t.params.MediaTrack.ID()
 	downTrack.OnStatsUpdate(func(_ *sfu.DownTrack, stat *types.AnalyticsStat) {
-		t.params.Telemetry.TrackStats(types.StreamType_DOWNSTREAM, subscriberID, trackID, stat)
+		// t.params.Telemetry.TrackStats(types.StreamType_DOWNSTREAM, subscriberID, trackID, stat)
 	})
 
 	downTrack.OnMaxLayerChanged(func(dt *sfu.DownTrack, layer int32) {
@@ -205,7 +202,7 @@ func (t *MediaTrackSubscriptions) AddSubscriber(sub types.LocalParticipant, code
 
 		t.maybeNotifyNoSubscribers()
 
-		t.params.Telemetry.TrackUnsubscribed(context.Background(), subscriberID, t.params.MediaTrack.ToProto())
+		// t.params.Telemetry.TrackUnsubscribed(context.Background(), subscriberID, t.params.MediaTrack.ToProto())
 
 		// ignore if the subscribing sub is not connected
 		if sub.SubscriberPC().ConnectionState() == webrtc.PeerConnectionStateClosed {
@@ -251,7 +248,7 @@ func (t *MediaTrackSubscriptions) AddSubscriber(sub types.LocalParticipant, code
 		sub.Negotiate()
 	}()
 
-	t.params.Telemetry.TrackSubscribed(context.Background(), subscriberID, t.params.MediaTrack.ToProto())
+	// t.params.Telemetry.TrackSubscribed(context.Background(), subscriberID, t.params.MediaTrack.ToProto())
 	return downTrack, nil
 }
 
@@ -274,7 +271,7 @@ func (t *MediaTrackSubscriptions) RemoveAllSubscribers() {
 
 	t.subscribedTracksMu.Lock()
 	subscribedTracks := t.getAllSubscribedTracksLocked()
-	t.subscribedTracks = make(map[types.ParticipantID]types.SubscribedTrack)
+	t.subscribedTracks = make(map[types.ParticipantID]SubscribedTrack)
 	t.subscribedTracksMu.Unlock()
 
 	for _, subTrack := range subscribedTracks {
@@ -318,22 +315,22 @@ func (t *MediaTrackSubscriptions) UpdateVideoLayers() {
 	}
 }
 
-func (t *MediaTrackSubscriptions) getSubscribedTrack(subscriberID types.ParticipantID) types.SubscribedTrack {
+func (t *MediaTrackSubscriptions) getSubscribedTrack(subscriberID types.ParticipantID) SubscribedTrack {
 	t.subscribedTracksMu.RLock()
 	defer t.subscribedTracksMu.RUnlock()
 
 	return t.subscribedTracks[subscriberID]
 }
 
-func (t *MediaTrackSubscriptions) getAllSubscribedTracks() []types.SubscribedTrack {
+func (t *MediaTrackSubscriptions) getAllSubscribedTracks() []SubscribedTrack {
 	t.subscribedTracksMu.RLock()
 	defer t.subscribedTracksMu.RUnlock()
 
 	return t.getAllSubscribedTracksLocked()
 }
 
-func (t *MediaTrackSubscriptions) getAllSubscribedTracksLocked() []types.SubscribedTrack {
-	subTracks := make([]types.SubscribedTrack, 0, len(t.subscribedTracks))
+func (t *MediaTrackSubscriptions) getAllSubscribedTracksLocked() []SubscribedTrack {
+	subTracks := make([]SubscribedTrack, 0, len(t.subscribedTracks))
 	for _, subTrack := range t.subscribedTracks {
 		subTracks = append(subTracks, subTrack)
 	}
@@ -342,7 +339,7 @@ func (t *MediaTrackSubscriptions) getAllSubscribedTracksLocked() []types.Subscri
 
 // TODO: send for all down tracks from the source participant
 // https://tools.ietf.org/html/rfc7941
-func (t *MediaTrackSubscriptions) sendDownTrackBindingReports(sub types.LocalParticipant) {
+func (t *MediaTrackSubscriptions) sendDownTrackBindingReports(sub Peer) {
 	var sd []rtcp.SourceDescriptionChunk
 
 	subTrack := t.getSubscribedTrack(sub.ID())

@@ -75,6 +75,26 @@ type SFUConfig struct {
 	TurnAuth      func(username string, realm string, srcAddr net.Addr) ([]byte, bool)
 }
 
+type ReceiverConfig struct {
+	PacketBufferSize int
+	maxBitrate       uint64
+}
+
+type RTPHeaderExtensionConfig struct {
+	Audio []string
+	Video []string
+}
+
+type RTCPFeedbackConfig struct {
+	Audio []webrtc.RTCPFeedback
+	Video []webrtc.RTCPFeedback
+}
+
+type DirectionConfig struct {
+	RTPHeaderExtension RTPHeaderExtensionConfig
+	RTCPFeedback       RTCPFeedbackConfig
+}
+
 // NewWebRTCTransportConfig parses our settings and returns a usable WebRTCTransportConfig for creating PeerConnections
 func NewWebRTCTransportConfig(c SFUConfig) WebRTCTransportConfig {
 	se := webrtc.SettingEngine{}

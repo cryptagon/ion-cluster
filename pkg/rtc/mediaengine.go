@@ -3,6 +3,7 @@ package rtc
 import (
 	"strings"
 
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/webrtc/v3"
 )
 

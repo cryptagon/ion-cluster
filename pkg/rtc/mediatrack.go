@@ -1,7 +1,6 @@
 package rtc
 
 import (
-	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -113,7 +112,7 @@ func NewMediaTrack(track *webrtc.TrackRemote, params MediaTrackParams) *MediaTra
 		Logger: t.params.Logger,
 	})
 	t.connectionStats.OnStatsUpdate(func(_cs *connectionquality.ConnectionStats, stat *types.AnalyticsStat) {
-		t.params.Telemetry.TrackStats(types.StreamType_UPSTREAM, t.PublisherID(), t.ID(), stat)
+		// t.params.Telemetry.TrackStats(types.StreamType_UPSTREAM, t.PublisherID(), t.ID(), stat)
 	})
 
 	t.AddOnClose(func() {
@@ -220,9 +219,9 @@ func (t *MediaTrack) AddReceiver(receiver *webrtc.RTPReceiver, track *webrtc.Tra
 		wr.OnCloseHandler(func() {
 			t.RemoveAllSubscribers()
 			t.MediaTrackReceiver.Close()
-			t.params.Telemetry.TrackUnpublished(context.Background(), t.PublisherID(), t.ToProto(), uint32(track.SSRC()))
+			// t.params.Telemetry.TrackUnpublished(context.Background(), t.PublisherID(), t.ToProto(), uint32(track.SSRC()))
 		})
-		t.params.Telemetry.TrackPublished(context.Background(), t.PublisherID(), t.ToProto())
+		// t.params.Telemetry.TrackPublished(context.Background(), t.PublisherID(), t.ToProto())
 
 		t.buffer = buff
 

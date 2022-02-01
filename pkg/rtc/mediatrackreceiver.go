@@ -6,15 +6,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/livekit/livekit-server/pkg/rtc/types"
-
-	"github.com/livekit/protocol/logger"
-	"github.com/livekit/protocol/utils"
+	"github.com/pion/ion-cluster/pkg/logger"
+	sfu "github.com/pion/ion-cluster/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/sfu/buffer"
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/rtcp"
-
-	"github.com/livekit/livekit-server/pkg/sfu"
-	"github.com/livekit/livekit-server/pkg/sfu/buffer"
-	"github.com/livekit/livekit-server/pkg/telemetry"
 )
 
 const (
@@ -24,8 +20,8 @@ const (
 
 type MediaTrackReceiver struct {
 	params      MediaTrackReceiverParams
-	muted       utils.AtomicFlag
-	simulcasted utils.AtomicFlag
+	muted       AtomicFlag
+	simulcasted AtomicFlag
 
 	lock            sync.RWMutex
 	receiver        sfu.TrackReceiver
@@ -45,14 +41,14 @@ type MediaTrackReceiver struct {
 
 type MediaTrackReceiverParams struct {
 	TrackInfo           *types.TrackInfo
-	MediaTrack          types.MediaTrack
+	MediaTrack          *MediaTrack
 	ParticipantID       types.ParticipantID
 	ParticipantIdentity types.ParticipantIdentity
 	BufferFactory       *buffer.Factory
 	ReceiverConfig      ReceiverConfig
 	SubscriberConfig    DirectionConfig
-	Telemetry           telemetry.TelemetryService
-	Logger              logger.Logger
+	// Telemetry           telemetry.TelemetryService
+	Logger logger.Logger
 }
 
 func NewMediaTrackReceiver(params MediaTrackReceiverParams) *MediaTrackReceiver {
@@ -65,8 +61,8 @@ func NewMediaTrackReceiver(params MediaTrackReceiverParams) *MediaTrackReceiver 
 		BufferFactory:    params.BufferFactory,
 		ReceiverConfig:   params.ReceiverConfig,
 		SubscriberConfig: params.SubscriberConfig,
-		Telemetry:        params.Telemetry,
-		Logger:           params.Logger,
+		// Telemetry:        params.Telemetry,
+		Logger: params.Logger,
 	})
 
 	if params.TrackInfo.Muted {
@@ -177,7 +173,7 @@ func (t *MediaTrackReceiver) AddOnClose(f func()) {
 }
 
 // AddSubscriber subscribes sub to current mediaTrack
-func (t *MediaTrackReceiver) AddSubscriber(sub types.LocalParticipant) error {
+func (t *MediaTrackReceiver) AddSubscriber(sub Peer) error {
 	t.lock.Lock()
 	defer t.lock.Unlock()
 

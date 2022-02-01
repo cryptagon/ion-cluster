@@ -7,6 +7,7 @@ import (
 
 	"github.com/lucsky/cuid"
 	"github.com/pion/ion-cluster/pkg/logger"
+	"github.com/pion/ion-cluster/pkg/types"
 
 	"github.com/pion/webrtc/v3"
 )
@@ -26,10 +27,11 @@ var (
 )
 
 type Peer interface {
-	ID() string
+	ID() types.ParticipantID
+	Identity() types.ParticipantIdentity
 	Session() ISession
-	Publisher() *Publisher
-	Subscriber() *Subscriber
+	Publisher() *PCTransport
+	Subscriber() *PCTransport
 	Close() error
 	SendDCMessage(label string, msg []byte) error
 }
@@ -66,8 +68,8 @@ type PeerLocal struct {
 	session  ISession
 	provider SessionProvider
 
-	publisher  *Publisher
-	subscriber *Subscriber
+	publisher  *PCTransport
+	subscriber *PCTransport
 
 	OnOffer                    func(*webrtc.SessionDescription)
 	OnIceCandidate             func(*webrtc.ICECandidateInit, int)

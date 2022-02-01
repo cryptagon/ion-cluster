@@ -9,8 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/koding/websocketproxy"
+	"github.com/pion/ion-cluster/pkg/rtc"
 
-	"github.com/pion/ion-cluster/pkg/sfu"
 	"github.com/sourcegraph/jsonrpc2"
 	websocketjsonrpc2 "github.com/sourcegraph/jsonrpc2/websocket"
 
@@ -103,7 +103,7 @@ func (s *Signal) ServeWebsocket() {
 		p := JSONSignal{
 			sync.Mutex{},
 			s.c,
-			sfu.NewPeer(s.c),
+			rtc.NewPeer(s.c),
 			"",
 		}
 		defer p.Close()

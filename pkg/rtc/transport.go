@@ -8,20 +8,16 @@ import (
 
 	"github.com/bep/debounce"
 	"github.com/go-logr/logr"
-	"github.com/livekit/protocol/logger"
 	"github.com/pion/interceptor"
 	"github.com/pion/interceptor/pkg/cc"
 	"github.com/pion/interceptor/pkg/gcc"
 	"github.com/pion/interceptor/pkg/twcc"
+	"github.com/pion/ion-cluster/pkg/config"
+	"github.com/pion/ion-cluster/pkg/logger"
+	sfu "github.com/pion/ion-cluster/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/sdp/v3"
 	"github.com/pion/webrtc/v3"
-
-	"github.com/livekit/livekit-server/pkg/config"
-	serverlogger "github.com/livekit/livekit-server/pkg/logger"
-	"github.com/livekit/livekit-server/pkg/rtc/types"
-	"github.com/livekit/livekit-server/pkg/sfu"
-	"github.com/livekit/livekit-server/pkg/telemetry"
-	"github.com/livekit/livekit-server/pkg/telemetry/prometheus"
 )
 
 const (
@@ -67,10 +63,10 @@ type TransportParams struct {
 	Target                  types.SignalTarget
 	Config                  *WebRTCConfig
 	CongestionControlConfig config.CongestionControlConfig
-	Telemetry               telemetry.TelemetryService
-	EnabledCodecs           []*types.Codec
-	Logger                  logger.Logger
-	SimTracks               map[uint32]SimulcastTrackInfo
+	// Telemetry               telemetry.TelemetryService
+	EnabledCodecs []*types.Codec
+	Logger        logger.Logger
+	SimTracks     map[uint32]SimulcastTrackInfo
 }
 
 func newPeerConnection(params TransportParams, onBandwidthEstimator func(estimator cc.BandwidthEstimator)) (*webrtc.PeerConnection, *webrtc.MediaEngine, error) {
@@ -87,7 +83,7 @@ func newPeerConnection(params TransportParams, onBandwidthEstimator func(estimat
 
 	se := params.Config.SettingEngine
 	se.DisableMediaEngineCopy(true)
-	lf := serverlogger.NewLoggerFactory(logr.Logger(params.Logger))
+	lf := logger.NewLoggerFactory(logr.Logger(params.Logger))
 	if lf != nil {
 		se.LoggerFactory = lf
 	}
@@ -291,7 +287,7 @@ func (t *PCTransport) createAndSendOffer(options *webrtc.OfferOptions) error {
 		if iceRestart && currentSD != nil {
 			t.logger.Debugw("recovering from client negotiation state")
 			if err := t.pc.SetRemoteDescription(*currentSD); err != nil {
-				prometheus.ServiceOperationCounter.WithLabelValues("offer", "error", "remote_description").Add(1)
+				// prometheus.ServiceOperationCounter.WithLabelValues("offer", "error", "remote_description").Add(1)
 				return err
 			}
 		} else {
@@ -314,14 +310,14 @@ func (t *PCTransport) createAndSendOffer(options *webrtc.OfferOptions) error {
 
 	offer, err := t.pc.CreateOffer(options)
 	if err != nil {
-		prometheus.ServiceOperationCounter.WithLabelValues("offer", "error", "create").Add(1)
+		// prometheus.ServiceOperationCounter.WithLabelValues("offer", "error", "create").Add(1)
 		t.logger.Errorw("could not create offer", err)
 		return err
 	}
 
 	err = t.pc.SetLocalDescription(offer)
 	if err != nil {
-		prometheus.ServiceOperationCounter.WithLabelValues("offer", "error", "local_description").Add(1)
+		// prometheus.ServiceOperationCounter.WithLabelValues("offer", "error", "local_description").Add(1)
 		t.logger.Errorw("could not set local description", err)
 		return err
 	}
@@ -437,7 +433,7 @@ func (t *PCTransport) OnStreamStateChange(f func(update *sfu.StreamStateUpdate) 
 	t.streamAllocator.OnStreamStateChange(f)
 }
 
-func (t *PCTransport) AddTrack(subTrack types.SubscribedTrack) {
+func (t *PCTransport) AddTrack(subTrack SubscribedTrack) {
 	if t.streamAllocator == nil {
 		return
 	}
@@ -448,7 +444,7 @@ func (t *PCTransport) AddTrack(subTrack types.SubscribedTrack) {
 	})
 }
 
-func (t *PCTransport) RemoveTrack(subTrack types.SubscribedTrack) {
+func (t *PCTransport) RemoveTrack(subTrack SubscribedTrack) {
 	if t.streamAllocator == nil {
 		return
 	}
