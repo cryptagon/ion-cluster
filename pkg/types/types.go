@@ -51,3 +51,58 @@ const (
 	TrackSource_SCREEN_SHARE       TrackSource = 3
 	TrackSource_SCREEN_SHARE_AUDIO TrackSource = 4
 )
+
+type TrackType int32
+
+const (
+	TrackType_AUDIO TrackType = 0
+	TrackType_VIDEO TrackType = 1
+	TrackType_DATA  TrackType = 2
+)
+
+type Codec struct {
+	Mime     string `protobuf:"bytes,1,opt,name=mime,proto3" json:"mime,omitempty"`
+	FmtpLine string `protobuf:"bytes,2,opt,name=fmtp_line,json=fmtpLine,proto3" json:"fmtp_line,omitempty"`
+}
+
+type TrackInfo struct {
+	Sid   string    `protobuf:"bytes,1,opt,name=sid,proto3" json:"sid,omitempty"`
+	Type  TrackType `protobuf:"varint,2,opt,name=type,proto3,enum=livekit.TrackType" json:"type,omitempty"`
+	Name  string    `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Muted bool      `protobuf:"varint,4,opt,name=muted,proto3" json:"muted,omitempty"`
+	// original width of video (unset for audio)
+	// clients may receive a lower resolution version with simulcast
+	Width uint32 `protobuf:"varint,5,opt,name=width,proto3" json:"width,omitempty"`
+	// original height of video (unset for audio)
+	Height uint32 `protobuf:"varint,6,opt,name=height,proto3" json:"height,omitempty"`
+	// true if track is simulcasted
+	Simulcast bool `protobuf:"varint,7,opt,name=simulcast,proto3" json:"simulcast,omitempty"`
+	// true if DTX (Discontinuous Transmission) is disabled for audio
+	DisableDtx bool `protobuf:"varint,8,opt,name=disable_dtx,json=disableDtx,proto3" json:"disable_dtx,omitempty"`
+	// source of media
+	Source TrackSource   `protobuf:"varint,9,opt,name=source,proto3,enum=livekit.TrackSource" json:"source,omitempty"`
+	Layers []*VideoLayer `protobuf:"bytes,10,rep,name=layers,proto3" json:"layers,omitempty"`
+	// mime type of codec
+	MimeType string `protobuf:"bytes,11,opt,name=mime_type,json=mimeType,proto3" json:"mime_type,omitempty"`
+	Mid      string `protobuf:"bytes,12,opt,name=mid,proto3" json:"mid,omitempty"`
+}
+
+// provide information about available spatial layers
+type VideoLayer struct {
+	// for tracks with a single layer, this should be HIGH
+	Quality VideoQuality `protobuf:"varint,1,opt,name=quality,proto3,enum=livekit.VideoQuality" json:"quality,omitempty"`
+	Width   uint32       `protobuf:"varint,2,opt,name=width,proto3" json:"width,omitempty"`
+	Height  uint32       `protobuf:"varint,3,opt,name=height,proto3" json:"height,omitempty"`
+	// target bitrate, server will measure actual
+	Bitrate uint32 `protobuf:"varint,4,opt,name=bitrate,proto3" json:"bitrate,omitempty"`
+	Ssrc    uint32 `protobuf:"varint,5,opt,name=ssrc,proto3" json:"ssrc,omitempty"`
+}
+
+type VideoQuality int32
+
+const (
+	VideoQuality_LOW    VideoQuality = 0
+	VideoQuality_MEDIUM VideoQuality = 1
+	VideoQuality_HIGH   VideoQuality = 2
+	VideoQuality_OFF    VideoQuality = 3
+)

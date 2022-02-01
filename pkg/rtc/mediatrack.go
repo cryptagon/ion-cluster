@@ -6,18 +6,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/livekit/livekit-server/pkg/sfu/connectionquality"
-
-	"github.com/livekit/protocol/livekit"
-	"github.com/livekit/protocol/logger"
+	"github.com/pion/ion-cluster/pkg/config"
+	"github.com/pion/ion-cluster/pkg/logger"
+	sfu "github.com/pion/ion-cluster/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/sfu/buffer"
+	"github.com/pion/ion-cluster/pkg/sfu/connectionquality"
+	"github.com/pion/ion-cluster/pkg/sfu/twcc"
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
-
-	"github.com/livekit/livekit-server/pkg/config"
-	"github.com/livekit/livekit-server/pkg/sfu"
-	"github.com/livekit/livekit-server/pkg/sfu/buffer"
-	"github.com/livekit/livekit-server/pkg/sfu/twcc"
-	"github.com/livekit/livekit-server/pkg/telemetry"
 )
 
 const (
@@ -31,7 +28,7 @@ type MediaTrack struct {
 	numUpTracks uint32
 	buffer      *buffer.Buffer
 
-	layerSSRCs [livekit.VideoQuality_HIGH + 1]uint32
+	layerSSRCs [types.VideoQuality_HIGH + 1]uint32
 
 	audioLevelMu sync.RWMutex
 	audioLevel   *AudioLevel
@@ -46,19 +43,19 @@ type MediaTrack struct {
 }
 
 type MediaTrackParams struct {
-	TrackInfo           *livekit.TrackInfo
+	TrackInfo           *types.TrackInfo
 	SignalCid           string
 	SdpCid              string
-	ParticipantID       livekit.ParticipantID
-	ParticipantIdentity livekit.ParticipantIdentity
+	ParticipantID       types.ParticipantID
+	ParticipantIdentity types.ParticipantIdentity
 	// channel to send RTCP packets to the source
 	RTCPChan         chan []rtcp.Packet
 	BufferFactory    *buffer.Factory
 	ReceiverConfig   ReceiverConfig
 	SubscriberConfig DirectionConfig
 	AudioConfig      config.AudioConfig
-	Telemetry        telemetry.TelemetryService
-	Logger           logger.Logger
+	// Telemetry        telemetry.TelemetryService
+	Logger logger.Logger
 }
 
 func NewMediaTrack(track *webrtc.TrackRemote, params MediaTrackParams) *MediaTrack {
@@ -74,27 +71,28 @@ func NewMediaTrack(track *webrtc.TrackRemote, params MediaTrackParams) *MediaTra
 		BufferFactory:       params.BufferFactory,
 		ReceiverConfig:      params.ReceiverConfig,
 		SubscriberConfig:    params.SubscriberConfig,
-		Telemetry:           params.Telemetry,
-		Logger:              params.Logger,
+		// Telemetry:           params.Telemetry,
+		Logger: params.Logger,
 	})
 	t.MediaTrackReceiver.OnMediaLossUpdate(func(fractionalLoss uint8) {
-		if t.buffer != nil && t.Kind() == livekit.TrackType_AUDIO {
+		if t.buffer != nil && t.Kind() == types.TrackType_AUDIO {
 			// ok to access buffer since receivers are added before subscribers
 			t.buffer.SetLastFractionLostReport(fractionalLoss)
 		}
 	})
-	t.MediaTrackReceiver.OnVideoLayerUpdate(func(layers []*livekit.VideoLayer) {
-		for _, layer := range layers {
-			t.params.Telemetry.TrackPublishedUpdate(context.Background(), t.PublisherID(),
-				&livekit.TrackInfo{
-					Sid:       string(t.ID()),
-					Type:      livekit.TrackType_VIDEO,
-					Muted:     t.IsMuted(),
-					Width:     layer.Width,
-					Height:    layer.Height,
-					Simulcast: t.IsSimulcast(),
-				})
-		}
+	t.MediaTrackReceiver.OnVideoLayerUpdate(func(layers []*types.VideoLayer) {
+		logger.Infow("OnVideoLayerUpdate")
+		// for _, layer := range layers {
+		// 	t.params.Telemetry.TrackPublishedUpdate(context.Background(), t.PublisherID(),
+		// 		&types.TrackInfo{
+		// 			Sid:       string(t.ID()),
+		// 			Type:      types.TrackType_VIDEO,
+		// 			Muted:     t.IsMuted(),
+		// 			Width:     layer.Width,
+		// 			Height:    layer.Height,
+		// 			Simulcast: t.IsSimulcast(),
+		// 		})
+		// }
 	})
 
 	t.connectionStats = connectionquality.NewConnectionStats(connectionquality.ConnectionStatsParams{
@@ -114,8 +112,8 @@ func NewMediaTrack(track *webrtc.TrackRemote, params MediaTrackParams) *MediaTra
 		},
 		Logger: t.params.Logger,
 	})
-	t.connectionStats.OnStatsUpdate(func(_cs *connectionquality.ConnectionStats, stat *livekit.AnalyticsStat) {
-		t.params.Telemetry.TrackStats(livekit.StreamType_UPSTREAM, t.PublisherID(), t.ID(), stat)
+	t.connectionStats.OnStatsUpdate(func(_cs *connectionquality.ConnectionStats, stat *types.AnalyticsStat) {
+		t.params.Telemetry.TrackStats(types.StreamType_UPSTREAM, t.PublisherID(), t.ID(), stat)
 	})
 
 	t.AddOnClose(func() {
@@ -132,7 +130,7 @@ func (t *MediaTrack) SdpCid() string {
 	return t.params.SdpCid
 }
 
-func (t *MediaTrack) ToProto() *livekit.TrackInfo {
+func (t *MediaTrack) ToProto() *types.TrackInfo {
 	info := t.MediaTrackReceiver.TrackInfo()
 	info.Muted = t.IsMuted()
 	info.Simulcast = t.IsSimulcast()
@@ -173,7 +171,7 @@ func (t *MediaTrack) AddReceiver(receiver *webrtc.RTPReceiver, track *webrtc.Tra
 	}
 	buff.OnFeedback(t.handlePublisherFeedback)
 
-	if t.Kind() == livekit.TrackType_AUDIO {
+	if t.Kind() == types.TrackType_AUDIO {
 		t.audioLevelMu.Lock()
 		t.audioLevel = NewAudioLevel(t.params.AudioConfig.ActiveLevel, t.params.AudioConfig.MinPercentile)
 		buff.OnAudioLevel(func(level uint8, duration uint32) {
@@ -183,7 +181,7 @@ func (t *MediaTrack) AddReceiver(receiver *webrtc.RTPReceiver, track *webrtc.Tra
 			t.audioLevel.Observe(level, duration)
 		})
 		t.audioLevelMu.Unlock()
-	} else if t.Kind() == livekit.TrackType_VIDEO {
+	} else if t.Kind() == types.TrackType_VIDEO {
 		if twcc != nil {
 			buff.OnTransportWideCC(func(sn uint16, timeNS int64, marker bool) {
 				twcc.Push(sn, timeNS, marker)

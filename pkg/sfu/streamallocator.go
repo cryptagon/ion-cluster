@@ -9,7 +9,7 @@ import (
 
 	"github.com/pion/interceptor/pkg/cc"
 	"github.com/pion/ion-cluster/pkg/logger"
-	"github.com/pion/ion-cluster/pkg/sfu/types"
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
 

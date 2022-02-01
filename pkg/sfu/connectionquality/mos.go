@@ -1,6 +1,6 @@
 package connectionquality
 
-import "github.com/pion/ion-cluster/pkg/sfu/types"
+import "github.com/pion/ion-cluster/pkg/types"
 
 // MOS score calculation is based on webrtc-stats
 // available @ https://github.com/oanguenot/webrtc-stats

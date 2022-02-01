@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pion/ion-cluster/pkg/sfu/types"
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/rtcp"
 	"github.com/pion/webrtc/v3"
 	"github.com/rs/zerolog/log"

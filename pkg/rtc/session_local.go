@@ -14,7 +14,7 @@ import (
 // are automatically subscribed to each other.
 type ISession interface {
 	ID() string
-	Publish(router Router, r sfu.TrackReceiver)
+	Publish(mediaTrack MediaTrack, r sfu.TrackReceiver)
 	Subscribe(peer Peer)
 	AddPeer(peer Peer)
 	GetPeer(peerID string) Peer

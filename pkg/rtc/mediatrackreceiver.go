@@ -8,7 +8,6 @@ import (
 
 	"github.com/livekit/livekit-server/pkg/rtc/types"
 
-	"github.com/livekit/protocol/livekit"
 	"github.com/livekit/protocol/logger"
 	"github.com/livekit/protocol/utils"
 	"github.com/pion/rtcp"
@@ -30,14 +29,14 @@ type MediaTrackReceiver struct {
 
 	lock            sync.RWMutex
 	receiver        sfu.TrackReceiver
-	layerDimensions sync.Map // livekit.VideoQuality => *livekit.VideoLayer
+	layerDimensions sync.Map // types.VideoQuality => *types.VideoLayer
 
 	// track audio fraction lost
 	downFracLostLock   sync.Mutex
 	maxDownFracLost    uint8
 	maxDownFracLostTs  time.Time
 	onMediaLossUpdate  func(fractionalLoss uint8)
-	onVideoLayerUpdate func(layers []*livekit.VideoLayer)
+	onVideoLayerUpdate func(layers []*types.VideoLayer)
 
 	onClose []func()
 
@@ -45,10 +44,10 @@ type MediaTrackReceiver struct {
 }
 
 type MediaTrackReceiverParams struct {
-	TrackInfo           *livekit.TrackInfo
+	TrackInfo           *types.TrackInfo
 	MediaTrack          types.MediaTrack
-	ParticipantID       livekit.ParticipantID
-	ParticipantIdentity livekit.ParticipantIdentity
+	ParticipantID       types.ParticipantID
+	ParticipantIdentity types.ParticipantIdentity
 	BufferFactory       *buffer.Factory
 	ReceiverConfig      ReceiverConfig
 	SubscriberConfig    DirectionConfig
@@ -74,7 +73,7 @@ func NewMediaTrackReceiver(params MediaTrackReceiverParams) *MediaTrackReceiver 
 		t.SetMuted(true)
 	}
 
-	if params.TrackInfo != nil && t.Kind() == livekit.TrackType_VIDEO {
+	if params.TrackInfo != nil && t.Kind() == types.TrackType_VIDEO {
 		t.UpdateVideoLayers(params.TrackInfo.Layers)
 		// LK-TODO: maybe use this or simulcast flag in TrackInfo to set simulcasted here
 	}
@@ -102,7 +101,7 @@ func (t *MediaTrackReceiver) OnMediaLossUpdate(f func(fractionalLoss uint8)) {
 	t.onMediaLossUpdate = f
 }
 
-func (t *MediaTrackReceiver) OnVideoLayerUpdate(f func(layers []*livekit.VideoLayer)) {
+func (t *MediaTrackReceiver) OnVideoLayerUpdate(f func(layers []*types.VideoLayer)) {
 	t.onVideoLayerUpdate = f
 }
 
@@ -119,23 +118,23 @@ func (t *MediaTrackReceiver) Close() {
 	}
 }
 
-func (t *MediaTrackReceiver) ID() livekit.TrackID {
-	return livekit.TrackID(t.params.TrackInfo.Sid)
+func (t *MediaTrackReceiver) ID() types.TrackID {
+	return types.TrackID(t.params.TrackInfo.Sid)
 }
 
-func (t *MediaTrackReceiver) Kind() livekit.TrackType {
+func (t *MediaTrackReceiver) Kind() types.TrackType {
 	return t.params.TrackInfo.Type
 }
 
-func (t *MediaTrackReceiver) Source() livekit.TrackSource {
+func (t *MediaTrackReceiver) Source() types.TrackSource {
 	return t.params.TrackInfo.Source
 }
 
-func (t *MediaTrackReceiver) PublisherID() livekit.ParticipantID {
+func (t *MediaTrackReceiver) PublisherID() types.ParticipantID {
 	return t.params.ParticipantID
 }
 
-func (t *MediaTrackReceiver) PublisherIdentity() livekit.ParticipantIdentity {
+func (t *MediaTrackReceiver) PublisherIdentity() types.ParticipantIdentity {
 	return t.params.ParticipantIdentity
 }
 
@@ -201,7 +200,7 @@ func (t *MediaTrackReceiver) AddSubscriber(sub types.LocalParticipant) error {
 	}
 
 	if downTrack != nil {
-		if t.Kind() == livekit.TrackType_AUDIO {
+		if t.Kind() == types.TrackType_AUDIO {
 			downTrack.AddReceiverReportListener(t.handleMaxLossFeedback)
 		}
 
@@ -210,18 +209,18 @@ func (t *MediaTrackReceiver) AddSubscriber(sub types.LocalParticipant) error {
 	return nil
 }
 
-func (t *MediaTrackReceiver) UpdateTrackInfo(ti *livekit.TrackInfo) {
+func (t *MediaTrackReceiver) UpdateTrackInfo(ti *types.TrackInfo) {
 	t.params.TrackInfo = ti
-	if ti != nil && t.Kind() == livekit.TrackType_VIDEO {
+	if ti != nil && t.Kind() == types.TrackType_VIDEO {
 		t.UpdateVideoLayers(ti.Layers)
 	}
 }
 
-func (t *MediaTrackReceiver) TrackInfo() *livekit.TrackInfo {
+func (t *MediaTrackReceiver) TrackInfo() *types.TrackInfo {
 	return t.params.TrackInfo
 }
 
-func (t *MediaTrackReceiver) UpdateVideoLayers(layers []*livekit.VideoLayer) {
+func (t *MediaTrackReceiver) UpdateVideoLayers(layers []*types.VideoLayer) {
 	for _, layer := range layers {
 		t.layerDimensions.Store(layer.Quality, layer)
 	}
@@ -234,10 +233,10 @@ func (t *MediaTrackReceiver) UpdateVideoLayers(layers []*livekit.VideoLayer) {
 	// TODO: this might need to trigger a participant update for clients to pick up dimension change
 }
 
-func (t *MediaTrackReceiver) GetVideoLayers() []*livekit.VideoLayer {
-	layers := make([]*livekit.VideoLayer, 0)
+func (t *MediaTrackReceiver) GetVideoLayers() []*types.VideoLayer {
+	layers := make([]*types.VideoLayer, 0)
 	t.layerDimensions.Range(func(q, val interface{}) bool {
-		if layer, ok := val.(*livekit.VideoLayer); ok {
+		if layer, ok := val.(*types.VideoLayer); ok {
 			layers = append(layers, layer)
 		}
 		return true
@@ -248,9 +247,9 @@ func (t *MediaTrackReceiver) GetVideoLayers() []*livekit.VideoLayer {
 
 // GetQualityForDimension finds the closest quality to use for desired dimensions
 // affords a 20% tolerance on dimension
-func (t *MediaTrackReceiver) GetQualityForDimension(width, height uint32) livekit.VideoQuality {
-	quality := livekit.VideoQuality_HIGH
-	if t.Kind() == livekit.TrackType_AUDIO || t.params.TrackInfo.Height == 0 {
+func (t *MediaTrackReceiver) GetQualityForDimension(width, height uint32) types.VideoQuality {
+	quality := types.VideoQuality_HIGH
+	if t.Kind() == types.TrackType_AUDIO || t.params.TrackInfo.Height == 0 {
 		return quality
 	}
 	origSize := t.params.TrackInfo.Height
@@ -265,7 +264,7 @@ func (t *MediaTrackReceiver) GetQualityForDimension(width, height uint32) liveki
 	layerSizes := []uint32{180, 360, origSize}
 	var providedSizes []uint32
 	t.layerDimensions.Range(func(_, val interface{}) bool {
-		if layer, ok := val.(*livekit.VideoLayer); ok {
+		if layer, ok := val.(*types.VideoLayer); ok {
 			providedSizes = append(providedSizes, layer.Height)
 		}
 		return true
@@ -282,7 +281,7 @@ func (t *MediaTrackReceiver) GetQualityForDimension(width, height uint32) liveki
 	// finds the lowest layer that could satisfy client demands
 	requestedSize = uint32(float32(requestedSize) * layerSelectionTolerance)
 	for i, s := range layerSizes {
-		quality = livekit.VideoQuality(i)
+		quality = types.VideoQuality(i)
 		if s >= requestedSize {
 			break
 		}
@@ -365,8 +364,8 @@ func (t *MediaTrackReceiver) Receiver() sfu.TrackReceiver {
 	return t.receiver
 }
 
-func (t *MediaTrackReceiver) OnSubscribedMaxQualityChange(f func(trackID livekit.TrackID, subscribedQualities []*livekit.SubscribedQuality, maxSubscribedQuality livekit.VideoQuality) error) {
-	t.MediaTrackSubscriptions.OnSubscribedMaxQualityChange(func(subscribedQualities []*livekit.SubscribedQuality, maxSubscribedQuality livekit.VideoQuality) {
+func (t *MediaTrackReceiver) OnSubscribedMaxQualityChange(f func(trackID types.TrackID, subscribedQualities []*types.SubscribedQuality, maxSubscribedQuality types.VideoQuality) error) {
+	t.MediaTrackSubscriptions.OnSubscribedMaxQualityChange(func(subscribedQualities []*types.SubscribedQuality, maxSubscribedQuality types.VideoQuality) {
 		if f != nil && !t.IsMuted() {
 			_ = f(t.ID(), subscribedQualities, maxSubscribedQuality)
 		}
@@ -381,41 +380,41 @@ func (t *MediaTrackReceiver) OnSubscribedMaxQualityChange(f func(trackID livekit
 
 // ---------------------------
 
-func SpatialLayerForQuality(quality livekit.VideoQuality) int32 {
+func SpatialLayerForQuality(quality types.VideoQuality) int32 {
 	switch quality {
-	case livekit.VideoQuality_LOW:
+	case types.VideoQuality_LOW:
 		return 0
-	case livekit.VideoQuality_MEDIUM:
+	case types.VideoQuality_MEDIUM:
 		return 1
-	case livekit.VideoQuality_HIGH:
+	case types.VideoQuality_HIGH:
 		return 2
-	case livekit.VideoQuality_OFF:
+	case types.VideoQuality_OFF:
 		return -1
 	default:
 		return -1
 	}
 }
 
-func QualityForSpatialLayer(layer int32) livekit.VideoQuality {
+func QualityForSpatialLayer(layer int32) types.VideoQuality {
 	switch layer {
 	case 0:
-		return livekit.VideoQuality_LOW
+		return types.VideoQuality_LOW
 	case 1:
-		return livekit.VideoQuality_MEDIUM
+		return types.VideoQuality_MEDIUM
 	case 2:
-		return livekit.VideoQuality_HIGH
+		return types.VideoQuality_HIGH
 	case sfu.InvalidLayerSpatial:
-		return livekit.VideoQuality_OFF
+		return types.VideoQuality_OFF
 	default:
-		return livekit.VideoQuality_OFF
+		return types.VideoQuality_OFF
 	}
 }
 
-func VideoQualityToRID(q livekit.VideoQuality) string {
+func VideoQualityToRID(q types.VideoQuality) string {
 	switch q {
-	case livekit.VideoQuality_HIGH:
+	case types.VideoQuality_HIGH:
 		return sfu.FullResolution
-	case livekit.VideoQuality_MEDIUM:
+	case types.VideoQuality_MEDIUM:
 		return sfu.HalfResolution
 	default:
 		return sfu.QuarterResolution
