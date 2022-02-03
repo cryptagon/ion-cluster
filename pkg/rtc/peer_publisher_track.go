@@ -6,6 +6,17 @@ import (
 )
 
 type PublishedTrack struct {
-	Track    *webrtc.TrackRemote
-	Receiver sfu.TrackReceiver
+	peer     *Peer
+	track    *webrtc.TrackRemote
+	receiver sfu.TrackReceiver
+
+	subscriptions []*SubscribedTrack
+}
+
+func NewPublishedTrack(peer *Peer, track *webrtc.TrackRemote) *PublishedTrack {
+	return &PublishedTrack{
+		peer:          peer,
+		track:         track,
+		subscriptions: make([]*SubscribedTrack, 0),
+	}
 }

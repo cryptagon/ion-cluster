@@ -24,7 +24,7 @@ type Publisher struct {
 
 // NewPublisher creates a new Publisher
 func NewPublisher(id PeerID, cfg *WebRTCTransportConfig) (*Publisher, error) {
-	me, err := getMediaEngine()
+	me, err := getPublisherMediaEngine()
 	if err != nil {
 		logger.Errorw("NewPeer error", err, "peer_id", id)
 		return nil, errPeerConnectionInitFailed

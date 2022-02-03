@@ -7,7 +7,6 @@ import (
 
 	"github.com/lucsky/cuid"
 	"github.com/pion/ion-cluster/pkg/logger"
-	sfu "github.com/pion/ion-cluster/pkg/sfu"
 	"github.com/pion/ion-sfu/pkg/twcc"
 	"github.com/pion/rtcp"
 
@@ -82,7 +81,7 @@ type PeerLocal struct {
 	subscriber *Subscriber
 
 	publishedTracks  []PublishedTrack
-	subscribedTracks []sfu.DownTrack
+	subscribedTracks []SubscribedTrack
 
 	apiDC *webrtc.DataChannel
 
