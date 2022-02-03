@@ -7,36 +7,34 @@ import (
 
 	"github.com/pion/ion-cluster/pkg/logger"
 	sfu "github.com/pion/ion-cluster/pkg/sfu"
+	"github.com/pion/ion-cluster/pkg/types"
 	"github.com/pion/webrtc/v3"
 )
+
+type SessionID string
 
 // Session represents a set of peers. Transports inside a SessionLocal
 // are automatically subscribed to each other.
 type ISession interface {
 	ID() string
-	Publish(mediaTrack MediaTrack, r sfu.TrackReceiver)
+	Publish(router Router, r sfu.TrackReceiver)
 	Subscribe(peer Peer)
 	AddPeer(peer Peer)
-	GetPeer(peerID string) Peer
+	GetPeer(peerID types.ParticipantID) Peer
 	RemovePeer(peer Peer)
 	AudioObserver() *AudioObserver
-	AddDatachannel(owner string, dc *webrtc.DataChannel)
-	GetDCMiddlewares() []*Datachannel
-	GetFanOutDataChannelLabels() []string
-	GetDataChannels(peerID, label string) (dcs []*webrtc.DataChannel)
 	FanOutMessage(origin, label string, msg webrtc.DataChannelMessage)
 	Peers() []Peer
 }
 
 type SessionLocal struct {
-	id             string
+	id             SessionID
 	mu             sync.RWMutex
 	config         WebRTCTransportConfig
 	peers          map[string]Peer
 	closed         atomicBool
 	audioObs       *AudioObserver
 	fanOutDCs      []string
-	datachannels   []*Datachannel
 	onCloseHandler func()
 }
 
@@ -45,37 +43,24 @@ const (
 )
 
 // NewSession creates a new SessionLocal
-func NewSessionLocal(id string, dcs []*Datachannel, cfg WebRTCTransportConfig) ISession {
+func NewSessionLocal(id SessionID, cfg WebRTCTransportConfig) ISession {
 	s := &SessionLocal{
-		id:           id,
-		peers:        make(map[string]Peer),
-		datachannels: dcs,
-		config:       cfg,
-		audioObs:     NewAudioObserver(cfg.Router.AudioLevelThreshold, cfg.Router.AudioLevelInterval, cfg.Router.AudioLevelFilter),
+		id:       id,
+		peers:    make(map[string]Peer),
+		config:   cfg,
+		audioObs: NewAudioObserver(cfg.Router.AudioLevelThreshold, cfg.Router.AudioLevelInterval, cfg.Router.AudioLevelFilter),
 	}
 	go s.audioLevelObserver(cfg.Router.AudioLevelInterval)
 	return s
 }
 
 // ID return SessionLocal id
-func (s *SessionLocal) ID() string {
+func (s *SessionLocal) ID() SessionID {
 	return s.id
 }
 
 func (s *SessionLocal) AudioObserver() *AudioObserver {
 	return s.audioObs
-}
-
-func (s *SessionLocal) GetDCMiddlewares() []*Datachannel {
-	return s.datachannels
-}
-
-func (s *SessionLocal) GetFanOutDataChannelLabels() []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	fanout := make([]string, len(s.fanOutDCs))
-	copy(fanout, s.fanOutDCs)
-	return fanout
 }
 
 func (s *SessionLocal) AddPeer(peer Peer) {

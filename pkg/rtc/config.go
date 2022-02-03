@@ -47,17 +47,6 @@ type WebRTCConfig struct {
 	MDNS          bool                 `mapstructure:"mdns"`
 	Timeouts      WebRTCTimeoutsConfig `mapstructure:"timeouts"`
 }
-
-type RouterConfig struct {
-	WithStats           bool            `mapstructure:"withstats"`
-	MaxBandwidth        uint64          `mapstructure:"maxbandwidth"`
-	MaxPacketTrack      int             `mapstructure:"maxpackettrack"`
-	AudioLevelInterval  int             `mapstructure:"audiolevelinterval"`
-	AudioLevelThreshold uint8           `mapstructure:"audiolevelthreshold"`
-	AudioLevelFilter    int             `mapstructure:"audiolevelfilter"`
-	Simulcast           SimulcastConfig `mapstructure:"simulcast"`
-}
-
 type SimulcastConfig struct {
 	BestQualityFirst    bool `mapstructure:"bestqualityfirst"`
 	EnableTemporalLayer bool `mapstructure:"enabletemporallayer"`
