@@ -7,7 +7,9 @@ import (
 )
 
 type SubscribedTrack struct {
-	mu        sync.Mutex
+	mu   sync.Mutex
+	peer Peer
+
 	downtrack sfu.DownTrack
 
 	layer int

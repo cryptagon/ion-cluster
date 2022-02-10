@@ -7,6 +7,7 @@ import (
 
 	"github.com/lucsky/cuid"
 	"github.com/pion/ion-cluster/pkg/logger"
+	"github.com/pion/ion-cluster/pkg/sfu/buffer"
 	"github.com/pion/ion-sfu/pkg/twcc"
 	"github.com/pion/rtcp"
 
@@ -79,6 +80,8 @@ type PeerLocal struct {
 
 	publisher  *Publisher
 	subscriber *Subscriber
+
+	bufferFactory *buffer.Factory
 
 	publishedTracks  []PublishedTrack
 	subscribedTracks []SubscribedTrack

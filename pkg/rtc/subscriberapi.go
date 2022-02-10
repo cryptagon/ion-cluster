@@ -1,12 +1,10 @@
 package rtc
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/pion/ion-cluster/pkg/sfu"
-	"github.com/pion/webrtc/v3"
 )
 
 const (
@@ -91,66 +89,66 @@ func sendMessage(streamID string, peer Peer, layers []string, activeLayer int) {
 	}
 }
 
-func SubscriberAPI(next MessageProcessor) MessageProcessor {
-	return ProcessFunc(func(ctx context.Context, args ProcessArgs) {
-		srm := &setRemoteMedia{}
-		if err := json.Unmarshal(args.Message.Data, srm); err != nil {
-			return
-		}
-		// Publisher changing active layers
-		if srm.Layers != nil && len(srm.Layers) > 0 {
-			_layers, err := transformLayers(srm.Layers)
-			if err != nil {
-				sfu.Logger.Error(err, "error reading layers")
-				next.Process(ctx, args)
-				return
-			}
+// func SubscriberAPI(next MessageProcessor) MessageProcessor {
+// 	return ProcessFunc(func(ctx context.Context, args ProcessArgs) {
+// 		srm := &setRemoteMedia{}
+// 		if err := json.Unmarshal(args.Message.Data, srm); err != nil {
+// 			return
+// 		}
+// 		// Publisher changing active layers
+// 		if srm.Layers != nil && len(srm.Layers) > 0 {
+// 			_layers, err := transformLayers(srm.Layers)
+// 			if err != nil {
+// 				sfu.Logger.Error(err, "error reading layers")
+// 				next.Process(ctx, args)
+// 				return
+// 			}
 
-			session := args.Peer.Session()
-			peers := session.Peers()
-			for _, peer := range peers {
-				if peer.ID() != args.Peer.ID() {
-					downTracks := peer.Subscriber().GetDownTracks(srm.StreamID)
-					for _, dt := range downTracks {
-						if dt.Kind() == webrtc.RTPCodecTypeVideo {
-							// newLayer, _ := dt.UptrackLayersChange(layers)
-							// sendMessage(srm.StreamID, peer, srm.Layers, int(newLayer))
-						}
-					}
-				}
-			}
-		} else {
-			downTracks := args.Peer.Subscriber().GetDownTracks(srm.StreamID)
-			for _, dt := range downTracks {
-				switch dt.Kind() {
-				case webrtc.RTPCodecTypeAudio:
-					dt.Mute(!srm.Audio)
-				case webrtc.RTPCodecTypeVideo:
-					switch srm.Video {
-					case highValue:
-						dt.Mute(false)
-						dt.SetMaxSpatialLayer(2)
-					case mediumValue:
-						dt.Mute(false)
-						dt.SetMaxSpatialLayer(1)
-					case lowValue:
-						dt.Mute(false)
-						dt.SetMaxSpatialLayer(0)
-					case mutedValue:
-						dt.Mute(true)
-					}
-					switch srm.Framerate {
-					case highValue:
-						dt.SetMaxTemporalLayer(2)
-					case mediumValue:
-						dt.SetMaxTemporalLayer(1)
-					case lowValue:
-						dt.SetMaxTemporalLayer(0)
-					}
-				}
+// 			session := args.Peer.Session()
+// 			peers := session.Peers()
+// 			for _, peer := range peers {
+// 				if peer.ID() != args.Peer.ID() {
+// 					downTracks := peer.Subscriber().GetDownTracks(srm.StreamID)
+// 					for _, dt := range downTracks {
+// 						if dt.Kind() == webrtc.RTPCodecTypeVideo {
+// 							// newLayer, _ := dt.UptrackLayersChange(layers)
+// 							// sendMessage(srm.StreamID, peer, srm.Layers, int(newLayer))
+// 						}
+// 					}
+// 				}
+// 			}
+// 		} else {
+// 			downTracks := args.Peer.Subscriber().GetDownTracks(srm.StreamID)
+// 			for _, dt := range downTracks {
+// 				switch dt.Kind() {
+// 				case webrtc.RTPCodecTypeAudio:
+// 					dt.Mute(!srm.Audio)
+// 				case webrtc.RTPCodecTypeVideo:
+// 					switch srm.Video {
+// 					case highValue:
+// 						dt.Mute(false)
+// 						dt.SetMaxSpatialLayer(2)
+// 					case mediumValue:
+// 						dt.Mute(false)
+// 						dt.SetMaxSpatialLayer(1)
+// 					case lowValue:
+// 						dt.Mute(false)
+// 						dt.SetMaxSpatialLayer(0)
+// 					case mutedValue:
+// 						dt.Mute(true)
+// 					}
+// 					switch srm.Framerate {
+// 					case highValue:
+// 						dt.SetMaxTemporalLayer(2)
+// 					case mediumValue:
+// 						dt.SetMaxTemporalLayer(1)
+// 					case lowValue:
+// 						dt.SetMaxTemporalLayer(0)
+// 					}
+// 				}
 
-			}
-		}
-		next.Process(ctx, args)
-	})
-}
+// 			}
+// 		}
+// 		next.Process(ctx, args)
+// 	})
+// }

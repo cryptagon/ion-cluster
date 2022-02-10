@@ -13,8 +13,8 @@ import (
 
 // Join message sent when initializing a peer connection
 type Join struct {
-	SID   string                    `json:"sid"`
-	UID   string                    `json:"uid"`
+	SID   rtc.SessionID             `json:"sid"`
+	UID   rtc.PeerID                `json:"uid"`
 	Offer webrtc.SessionDescription `json:"offer"`
 }
 
@@ -87,18 +87,18 @@ func (p *JSONSignal) Handle(ctx context.Context, conn *jsonrpc2.Conn, req *jsonr
 			break
 		}
 
-		answer, err := p.Answer(join.Offer)
+		answer, err := p.SignalAnswer(join.Offer)
 		if err != nil {
 			replyError(err)
 			break
 		}
 
-		p.OnOffer = func(offer *webrtc.SessionDescription) {
+		p.SignalOnOffer = func(offer *webrtc.SessionDescription) {
 			if err := conn.Notify(ctx, "offer", offer); err != nil {
 				log.Error(err, "error sending offer")
 			}
 		}
-		p.OnIceCandidate = func(candidate *webrtc.ICECandidateInit, target int) {
+		p.SignalOnIceCandidate = func(candidate *webrtc.ICECandidateInit, target int) {
 			if err := conn.Notify(ctx, "trickle", Trickle{
 				Candidate: *candidate,
 				Target:    target,

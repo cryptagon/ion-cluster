@@ -31,6 +31,15 @@ type WebRTCTransportConfig struct {
 	BufferFactory *buffer.Factory
 }
 
+type RouterConfig struct {
+	WithStats           bool   `mapstructure:"withstats"`
+	MaxBandwidth        uint64 `mapstructure:"maxbandwidth"`
+	MaxPacketTrack      int    `mapstructure:"maxpackettrack"`
+	AudioLevelInterval  int    `mapstructure:"audiolevelinterval"`
+	AudioLevelThreshold uint8  `mapstructure:"audiolevelthreshold"`
+	AudioLevelFilter    int    `mapstructure:"audiolevelfilter"`
+	// Simulcast           SimulcastConfig `mapstructure:"simulcast"`
+}
 type WebRTCTimeoutsConfig struct {
 	ICEDisconnectedTimeout int `mapstructure:"disconnected"`
 	ICEFailedTimeout       int `mapstructure:"failed"`

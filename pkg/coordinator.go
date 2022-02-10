@@ -24,7 +24,7 @@ type sessionMeta struct {
 // Coordinator is responsible for managing sessions
 // and providing rpc connections to other nodes
 type coordinator interface {
-	getOrCreateSession(sessionID string) (*sessionMeta, error)
+	getOrCreateSession(sessionID rtc.SessionID) (*sessionMeta, error)
 	rtc.SessionProvider
 }
 
