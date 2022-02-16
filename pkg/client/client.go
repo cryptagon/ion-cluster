@@ -29,9 +29,9 @@ func newTransport(role int, signal Signal, cfg *webrtc.Configuration, extraInter
 	if err := webrtc.RegisterDefaultInterceptors(me, i); err != nil {
 		return nil, err
 	}
-	for _, itc := range extraInterceptors {
-		i.Add(itc)
-	}
+	// for _, itc := range extraInterceptors {
+	// 	i.Add(itc)
+	// }
 
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(me), webrtc.WithSettingEngine(se), webrtc.WithInterceptorRegistry(i))
 	pc, err := api.NewPeerConnection(*cfg)

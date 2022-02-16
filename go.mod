@@ -2,13 +2,15 @@ module github.com/pion/ion-cluster
 
 go 1.15
 
-//replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu master-tandem
-replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.20.9-tandem-20211001
+replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.20.13-0.20220216163514-709b842ab949
 
-replace github.com/pion/webrtc/v3 => github.com/billylindeman/webrtc/v3 v3.1.0-tandem-2
+replace github.com/pion/webrtc/v3 => github.com/cryptagon/webrtc/v3 v3.1.23-tandem
 
 //replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
+//replace github.com/pion/ion-sfu => /Users/nnovakovic/code/ion-sfu
+
 //replace github.com/pion/webrtc/v3 => /Users/billy/Development/go/src/github.com/pion/webrtc
+//replace github.com/pion/webrtc/v3 => /Users/nnovakovic/code/pion-webrtc
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
@@ -25,14 +27,14 @@ require (
 	github.com/lucsky/cuid v1.0.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pborman/uuid v1.2.1
-	github.com/pion/interceptor v0.0.19
+	github.com/pion/interceptor v0.1.7
 	github.com/pion/ion-log v1.0.1
 	github.com/pion/ion-sfu v1.10.7
 	github.com/pion/quic v0.1.4 // indirect
-	github.com/pion/rtcp v1.2.8
+	github.com/pion/rtcp v1.2.9
 	github.com/pion/sdp/v2 v2.4.0
 	github.com/pion/srtp v1.5.2 // indirect
-	github.com/pion/webrtc/v3 v3.1.5
+	github.com/pion/webrtc/v3 v3.1.23
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
