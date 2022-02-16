@@ -28,4 +28,6 @@ func (t *PublishedTrack) AddSubscriber(peer PeerID) *SubscribedTrack {
 	t.subscriptionsLock.Lock()
 	defer t.subscriptionsLock.Unlock()
 
+	st := NewSubscribedTrack(peer *Peer, trackID trackID, )
+
 }

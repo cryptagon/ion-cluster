@@ -14,3 +14,7 @@ type SubscribedTrack struct {
 
 	layer int
 }
+
+func NewSubscribedTrack(peer *Peer) {
+
+}

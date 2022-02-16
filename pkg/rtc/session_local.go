@@ -273,6 +273,13 @@ func (s *SessionLocal) Close() {
 // 	return dcs
 // }
 
+func (s *SessionLocal) DcBroadcast(text string) {
+	for _, p := range s.peers {
+		p.SendDCMessage(text)
+	}
+
+}
+
 func (s *SessionLocal) audioLevelObserver(audioLevelInterval int) {
 	if audioLevelInterval <= 50 {
 		logger.Infow("Values near/under 20ms may return unexpected values")
