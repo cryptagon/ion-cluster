@@ -14,7 +14,7 @@ key = ""
 cert = ""
 
 [signal.auth]
-enabled = true
+enabled = false 
 keytype = "HMAC"
 key = "1q2dGu5pzikcrECJgW3ADfXX3EsmoD99SYvSVCpDsJrAqxou5tUNbHPvkEFI4bTS"
 

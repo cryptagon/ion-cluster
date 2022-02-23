@@ -73,7 +73,7 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	key := fmt.Sprintf("/session/%v", sessionID)
 	mu := concurrency.NewMutex(s, key)
 	if err := mu.Lock(ctx); err != nil {
-		log.Error(err, "could not acquire session lock")
+		log.Error(err, "could not acquire session lock", "sessionID", sessionID)
 		return nil, err
 	}
 	defer mu.Unlock(ctx)
@@ -81,18 +81,18 @@ func (e *etcdCoordinator) getOrCreateSession(sessionID string) (*sessionMeta, er
 	// Check to see if sessionMeta exists for this key
 	gr, err := e.client.Get(ctx, key)
 	if err != nil {
-		log.Error(err, "error looking up session")
+		log.Error(err, "error looking up session", "sessionID", sessionID)
 		return nil, err
 	}
 
 	// Session already exists somewhere in the cluster
 	// return the existing meta to the user
 	if gr.Count > 0 {
-		log.Info("found session")
+		log.Info("found session on node ", "session_id", sessionID)
 
 		var meta sessionMeta
 		if err := json.Unmarshal(gr.Kvs[0].Value, &meta); err != nil {
-			log.Error(err, "error unmarshaling session meta")
+			log.Error(err, "error unmarshaling session meta", "sessionID", sessionID)
 			return nil, err
 		}
 		meta.Redirect = (meta.NodeID != e.nodeID)
@@ -184,7 +184,7 @@ func (e *etcdCoordinator) onSessionClosed(sessionID string) {
 		delete(e.sessionLeases, sessionID)
 		leaseCancel()
 	} else {
-		log.Error(nil, "Could not find session lease!")
+		log.Error(nil, "Could not find session lease!", "sessionID", sessionID)
 	}
 
 	// Delete session meta
