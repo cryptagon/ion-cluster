@@ -31,8 +31,9 @@ type Trickle struct {
 
 // Presence contains metadata for every peerID (can be used for mapping userIDs to streams, stream types, etc)
 type Presence struct {
-	Revision uint64                 `json:"revision"`
-	Meta     map[string]interface{} `json:"meta"`
+	Revision   uint64                 `json:"revision"`
+	Meta       map[string]interface{} `json:"meta"`
+	SystemInfo map[string]string      `json:"sysinfo"`
 }
 
 type JSONSignal struct {

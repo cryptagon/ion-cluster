@@ -24,14 +24,6 @@ type Session struct {
 }
 
 func NewSession(id string, dcs []*sfu.Datachannel, cfg sfu.WebRTCTransportConfig) Session {
-
-	presenceMap := make(map[string]interface{})
-	if os.Getenv("POD_NAME") != "" {
-		presenceMap["sysinfo"] = map[string]string{
-			"pod": os.Getenv("POD_NAME"),
-		}
-	}
-
 	return Session{
 		sync.Mutex{},
 		make(map[string]interface{}),
@@ -60,6 +52,9 @@ func (s *Session) UpdatePresenceMetaForPeer(peerID string, meta interface{}) {
 		params: Presence{
 			Revision: s.presenceRevision,
 			Meta:     currentPresence,
+			SystemInfo: map[string]string{
+				"pod": os.Getenv("POD_NAME"),
+			},
 		},
 	}
 
