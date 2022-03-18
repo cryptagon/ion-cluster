@@ -4,7 +4,7 @@ go 1.15
 
 replace github.com/pion/webrtc/v3 => github.com/cryptagon/webrtc/v3 v3.1.23-tandem
 
-replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.20.13-0.20220308221914-24f3e905ea8d
+replace github.com/pion/ion-sfu => github.com/cryptagon/ion-sfu v1.20.13-0.20220318182827-37ce64f5f3c3
 
 // replace github.com/pion/ion-sfu => /Users/billy/Development/go/src/github.com/pion/ion-sfu
 //replace github.com/pion/ion-sfu => /Users/nnovakovic/code/ion-sfu
