@@ -281,6 +281,8 @@ github.com/cryptagon/ion-sfu v1.20.13-0.20220308221914-24f3e905ea8d h1:2Wf/kxWTH
 github.com/cryptagon/ion-sfu v1.20.13-0.20220308221914-24f3e905ea8d/go.mod h1:ValVJpMeYfRGvFLE+sgbhlSuFEnPZT+Z8+CbSYhjY2k=
 github.com/cryptagon/ion-sfu v1.20.13-0.20220318182827-37ce64f5f3c3 h1:F110QcDauSd4Gl4H9/BAMxqGhcAudgx7q+1LMaLs+X4=
 github.com/cryptagon/ion-sfu v1.20.13-0.20220318182827-37ce64f5f3c3/go.mod h1:ValVJpMeYfRGvFLE+sgbhlSuFEnPZT+Z8+CbSYhjY2k=
+github.com/cryptagon/ion-sfu v1.20.13-0.20220412144225-92ae85f25b5c h1:zZQqZexm18lrCLx2cxxdsqC4/GWzFZspDQeld9cPkQc=
+github.com/cryptagon/ion-sfu v1.20.13-0.20220412144225-92ae85f25b5c/go.mod h1:ValVJpMeYfRGvFLE+sgbhlSuFEnPZT+Z8+CbSYhjY2k=
 github.com/cryptagon/ion-sfu v1.20.16-tandem-20211202 h1:8PURVNKi1x+nn1DMjOjyttGH6Uho96I2C8B/jTgYdCE=
 github.com/cryptagon/ion-sfu v1.20.16-tandem-20211202/go.mod h1:HW3HDYKtHkOuqstshJcrVQbVkjyfa/8lKE8hX1TuMDI=
 github.com/cryptagon/webrtc/v3 v3.1.23-tandem h1:Rnzme8EzX8xDO+P6kY2xac2GsydvUyWPp2iN5MKGKac=
